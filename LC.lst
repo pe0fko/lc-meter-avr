@@ -1,0 +1,1650 @@
+
+AVRASM ver. 2.1.42  C:\SVN\lc-meter-avr\LC.asm Sun Jan 08 16:59:04 2012
+
+C:\SVN\lc-meter-avr\LC.asm(17): Including file 'C:\Program Files (x86)\Atmel\AVR Tools\AvrAssembler2\Appnotes\2313def.inc'
+                 
+                 
+                 ;**
+                 ;** Project......: L & C Meter
+                 ;**
+                 ;** Platform.....: AT90S2313
+                 ;**
+                 ;** RCS-ID.......: $Id$
+                 ;**
+                 ;** Programmer...: F.W. Krom, K2-Electronics
+                 ;** 
+                 ;** Description..: Meet de L or C waarde zelf calibrerend door bekende C.
+                 ;**
+                 ;** History......: 
+                 ;**
+                 ;**************************************************************************/
+                 
+                 .include "2313def.inc"
+                 
+                 ;***** Created: 2010-08-20 14:21 ******* Source: AT90S2313.xml ***********
+                 ;*************************************************************************
+                 ;* A P P L I C A T I O N   N O T E   F O R   T H E   A V R   F A M I L Y
+                 ;* 
+                 ;* Number            : AVR000
+                 ;* File Name         : "2313def.inc"
+                 ;* Title             : Register/Bit Definitions for the AT90S2313
+                 ;* Date              : 2010-08-20
+                 ;* Version           : 2.35
+                 ;* Support E-mail    : avr@atmel.com
+                 ;* Target MCU        : AT90S2313
+                 ;* 
+                 ;* DESCRIPTION
+                 ;* When including this file in the assembly program file, all I/O register 
+                 ;* names and I/O register bit names appearing in the data book can be used.
+                 ;* In addition, the six registers forming the three data pointers X, Y and 
+                 ;* Z have been assigned names XL - ZH. Highest RAM address for Internal 
+                 ;* SRAM is also defined 
+                 ;* 
+                 ;* The Register names are represented by their hexadecimal address.
+                 ;* 
+                 ;* The Register Bit names are represented by their bit number (0-7).
+                 ;* 
+                 ;* Please observe the difference in using the bit names with instructions
+                 ;* such as "sbr"/"cbr" (set/clear bit in register) and "sbrs"/"sbrc"
+                 ;* (skip if bit in register set/cleared). The following example illustrates
+                 ;* this:
+                 ;* 
+                 ;* in    r16,PORTB             ;read PORTB latch
+                 ;* sbr   r16,(1<<PB6)+(1<<PB5) ;set PB6 and PB5 (use masks, not bit#)
+                 ;* out   PORTB,r16             ;output to PORTB
+                 ;* 
+                 ;* in    r16,TIFR              ;read the Timer Interrupt Flag Register
+                 ;* sbrc  r16,TOV0              ;test the overflow flag (use bit#)
+                 ;* rjmp  TOV0_is_set           ;jump if set
+                 ;* ...                         ;otherwise do something else
+                 ;*************************************************************************
+                 
+                 #ifndef _2313DEF_INC_
+                 #define _2313DEF_INC_
+                 
+                 
+                 #pragma partinc 0
+                 
+                 ; ***** SPECIFY DEVICE ***************************************************
+                 .device AT90S2313
+                 #pragma AVRPART ADMIN PART_NAME AT90S2313
+                 .equ	SIGNATURE_000	= 0x1e
+                 .equ	SIGNATURE_001	= 0x91
+                 .equ	SIGNATURE_002	= 0x01
+                 
+                 #pragma AVRPART CORE CORE_VERSION V1
+                 
+                 
+                 ; ***** I/O REGISTER DEFINITIONS *****************************************
+                 ; NOTE:
+                 ; Definitions marked "MEMORY MAPPED"are extended I/O ports
+                 ; and cannot be used with IN/OUT instructions
+                 .equ	SREG	= 0x3f
+                 .equ	SPL	= 0x3d
+                 .equ	GIMSK	= 0x3b
+                 .equ	GIFR	= 0x3a
+                 .equ	TIMSK	= 0x39
+                 .equ	TIFR	= 0x38
+                 .equ	MCUCR	= 0x35
+                 .equ	TCCR0	= 0x33
+                 .equ	TCNT0	= 0x32
+                 .equ	TCCR1A	= 0x2f
+                 .equ	TCCR1B	= 0x2e
+                 .equ	TCNT1L	= 0x2c
+                 .equ	TCNT1H	= 0x2d
+                 .equ	OCR1AL	= 0x2a
+                 .equ	OCR1AH	= 0x2b
+                 .equ	ICR1L	= 0x24
+                 .equ	ICR1H	= 0x25
+                 .equ	WDTCR	= 0x21
+                 .equ	EEAR	= 0x1e
+                 .equ	EEDR	= 0x1d
+                 .equ	EECR	= 0x1c
+                 .equ	PORTB	= 0x18
+                 .equ	DDRB	= 0x17
+                 .equ	PINB	= 0x16
+                 .equ	PORTD	= 0x12
+                 .equ	DDRD	= 0x11
+                 .equ	PIND	= 0x10
+                 .equ	UDR	= 0x0c
+                 .equ	USR	= 0x0b
+                 .equ	UCR	= 0x0a
+                 .equ	UBRR	= 0x09
+                 .equ	ACSR	= 0x08
+                 
+                 
+                 ; ***** BIT DEFINITIONS **************************************************
+                 
+                 ; ***** PORTB ************************
+                 ; PORTB - Port B Data Register
+                 .equ	PORTB0	= 0	; Port B Data Register bit 0
+                 .equ	PB0	= 0	; For compatibility
+                 .equ	PORTB1	= 1	; Port B Data Register bit 1
+                 .equ	PB1	= 1	; For compatibility
+                 .equ	PORTB2	= 2	; Port B Data Register bit 2
+                 .equ	PB2	= 2	; For compatibility
+                 .equ	PORTB3	= 3	; Port B Data Register bit 3
+                 .equ	PB3	= 3	; For compatibility
+                 .equ	PORTB4	= 4	; Port B Data Register bit 4
+                 .equ	PB4	= 4	; For compatibility
+                 .equ	PORTB5	= 5	; Port B Data Register bit 5
+                 .equ	PB5	= 5	; For compatibility
+                 .equ	PORTB6	= 6	; Port B Data Register bit 6
+                 .equ	PB6	= 6	; For compatibility
+                 .equ	PORTB7	= 7	; Port B Data Register bit 7
+                 .equ	PB7	= 7	; For compatibility
+                 
+                 ; DDRB - Port B Data Direction Register
+                 .equ	DDB0	= 0	; Port B Data Direction Register bit 0
+                 .equ	DDB1	= 1	; Port B Data Direction Register bit 1
+                 .equ	DDB2	= 2	; Port B Data Direction Register bit 2
+                 .equ	DDB3	= 3	; Port B Data Direction Register bit 3
+                 .equ	DDB4	= 4	; Port B Data Direction Register bit 4
+                 .equ	DDB5	= 5	; Port B Data Direction Register bit 5
+                 .equ	DDB6	= 6	; Port B Data Direction Register bit 6
+                 .equ	DDB7	= 7	; Port B Data Direction Register bit 7
+                 
+                 ; PINB - Port B Input Pins
+                 .equ	PINB0	= 0	; Port B Input Pins bit 0
+                 .equ	PINB1	= 1	; Port B Input Pins bit 1
+                 .equ	PINB2	= 2	; Port B Input Pins bit 2
+                 .equ	PINB3	= 3	; Port B Input Pins bit 3
+                 .equ	PINB4	= 4	; Port B Input Pins bit 4
+                 .equ	PINB5	= 5	; Port B Input Pins bit 5
+                 .equ	PINB6	= 6	; Port B Input Pins bit 6
+                 .equ	PINB7	= 7	; Port B Input Pins bit 7
+                 
+                 
+                 ; ***** TIMER_COUNTER_0 **************
+                 ; TIMSK - Timer/Counter Interrupt Mask Register
+                 .equ	TOIE0	= 1	; Timer/Counter0 Overflow Interrupt Enable
+                 
+                 ; TIFR - Timer/Counter Interrupt Flag register
+                 .equ	TOV0	= 1	; Timer/Counter0 Overflow Flag
+                 
+                 ; TCCR0 - Timer/Counter0 Control Register
+                 .equ	CS00	= 0	; Clock Select0 bit 0
+                 .equ	CS01	= 1	; Clock Select0 bit 1
+                 .equ	CS02	= 2	; Clock Select0 bit 2
+                 
+                 ; TCNT0 - Timer Counter 0
+                 .equ	TCNT00	= 0	; Timer Counter 0 bit 0
+                 .equ	TCNT01	= 1	; Timer Counter 0 bit 1
+                 .equ	TCNT02	= 2	; Timer Counter 0 bit 2
+                 .equ	TCNT03	= 3	; Timer Counter 0 bit 3
+                 .equ	TCNT04	= 4	; Timer Counter 0 bit 4
+                 .equ	TCNT05	= 5	; Timer Counter 0 bit 5
+                 .equ	TCNT06	= 6	; Timer Counter 0 bit 6
+                 .equ	TCNT07	= 7	; Timer Counter 0 bit 7
+                 
+                 
+                 ; ***** TIMER_COUNTER_1 **************
+                 ; TIMSK - Timer/Counter Interrupt Mask Register
+                 .equ	TICIE1	= 3	; Timer/Counter1 Input Capture Interrupt Enable
+                 .equ	OCIE1A	= 6	; Timer/Counter1 Output CompareA Match Interrupt Enable
+                 .equ	TOIE1	= 7	; Timer/Counter1 Overflow Interrupt Enable
+                 
+                 ; TIFR - Timer/Counter Interrupt Flag register
+                 .equ	ICF1	= 3	; Input Capture Flag 1
+                 .equ	OCF1A	= 6	; Output Compare Flag 1A
+                 .equ	TOV1	= 7	; Timer/Counter1 Overflow Flag
+                 
+                 ; TCCR1A - Timer/Counter1 Control Register A
+                 .equ	PWM10	= 0	; Pulse Width Modulator Select Bit 0
+                 .equ	PWM11	= 1	; Pulse Width Modulator Select Bit 1
+                 .equ	COM1A0	= 6	; Comparet Ouput Mode 1A, bit 0
+                 .equ	COM1A1	= 7	; Compare Output Mode 1A, bit 1
+                 
+                 ; TCCR1B - Timer/Counter1 Control Register B
+                 .equ	CS10	= 0	; Clock Select bit 0
+                 .equ	CS11	= 1	; Clock Select 1 bit 1
+                 .equ	CS12	= 2	; Clock Select1 bit 2
+                 .equ	CTC1	= 3	; Clear Timer/Counter1 on Compare Match
+                 .equ	ICES1	= 6	; Input Capture 1 Edge Select
+                 .equ	ICNC1	= 7	; Input Capture 1 Noise Canceler
+                 
+                 
+                 ; ***** WATCHDOG *********************
+                 ; WDTCR - Watchdog Timer Control Register
+                 .equ	WDP0	= 0	; Watch Dog Timer Prescaler bit 0
+                 .equ	WDP1	= 1	; Watch Dog Timer Prescaler bit 1
+                 .equ	WDP2	= 2	; Watch Dog Timer Prescaler bit 2
+                 .equ	WDE	= 3	; Watch Dog Enable
+                 .equ	WDTOE	= 4	; RW
+                 .equ	WDDE	= WDTOE	; For compatibility
+                 
+                 
+                 ; ***** EXTERNAL_INTERRUPT ***********
+                 ; GIMSK - General Interrupt Mask Register
+                 .equ	INT0	= 6	; External Interrupt Request 0 Enable
+                 .equ	INT1	= 7	; External Interrupt Request 1 Enable
+                 
+                 ; GIFR - General Interrupt Flag register
+                 .equ	INTF0	= 6	; External Interrupt Flag 0
+                 .equ	INTF1	= 7	; External Interrupt Flag 1
+                 
+                 
+                 ; ***** UART *************************
+                 ; UDR - UART I/O Data Register
+                 .equ	UDR0	= 0	; UART I/O Data Register bit 0
+                 .equ	UDR1	= 1	; UART I/O Data Register bit 1
+                 .equ	UDR2	= 2	; UART I/O Data Register bit 2
+                 .equ	UDR3	= 3	; UART I/O Data Register bit 3
+                 .equ	UDR4	= 4	; UART I/O Data Register bit 4
+                 .equ	UDR5	= 5	; UART I/O Data Register bit 5
+                 .equ	UDR6	= 6	; UART I/O Data Register bit 6
+                 .equ	UDR7	= 7	; UART I/O Data Register bit 7
+                 
+                 ; USR - UART Status Register
+                 .equ	DOR	= 3	; Data overRun
+                 .equ	FE	= 4	; Framing Error
+                 .equ	UDRE	= 5	; UART Data Register Empty
+                 .equ	TXC	= 6	; UART Transmit Complete
+                 .equ	RXC	= 7	; UART Receive Complete
+                 
+                 ; UCR - UART Control Register
+                 .equ	TXB8	= 0	; Transmit Data Bit 8
+                 .equ	RXB8	= 1	; Receive Data Bit 8
+                 .equ	CHR9	= 2	; 9-bit Characters
+                 .equ	TXEN	= 3	; Transmitter Enable
+                 .equ	RXEN	= 4	; Receiver Enable
+                 .equ	UDRIE	= 5	; UART Data Register Empty Interrupt Enable
+                 .equ	TXCIE	= 6	; TX Complete Interrupt Enable
+                 .equ	RXCIE	= 7	; RX Complete Interrupt Enable
+                 
+                 ; UBRR - UART BAUD Rate Register
+                 .equ	UBRR0	= 0	; UART Baud Rate Register bit 0
+                 .equ	UBRR1	= 1	; UART Baud Rate Register bit 1
+                 .equ	UBRR2	= 2	; UART Baud Rate Register bit 2
+                 .equ	UBRR3	= 3	; UART Baud Rate Register bit 3
+                 .equ	UBRR4	= 4	; UART Baud Rate Register bit 4
+                 .equ	UBRR5	= 5	; UART Baud Rate Register bit 5
+                 .equ	UBRR6	= 6	; UART Baud Rate Register bit 6
+                 .equ	UBRR7	= 7	; UART Baud Rate Register bit 7
+                 
+                 
+                 ; ***** ANALOG_COMPARATOR ************
+                 ; ACSR - Analog Comparator Control And Status Register
+                 .equ	ACIS0	= 0	; Analog Comparator Interrupt Mode Select bit 0
+                 .equ	ACIS1	= 1	; Analog Comparator Interrupt Mode Select bit 1
+                 .equ	ACIC	= 2	; Analog Comparator Input Capture Enable
+                 .equ	ACIE	= 3	; Analog Comparator Interrupt Enable
+                 .equ	ACI	= 4	; Analog Comparator Interrupt Flag
+                 .equ	ACO	= 5	; Analog Comparator Output
+                 .equ	ACD	= 7	; Analog Comparator Disable
+                 
+                 
+                 ; ***** CPU **************************
+                 ; SREG - Status Register
+                 .equ	SREG_C	= 0	; Carry Flag
+                 .equ	SREG_Z	= 1	; Zero Flag
+                 .equ	SREG_N	= 2	; Negative Flag
+                 .equ	SREG_V	= 3	; Two's Complement Overflow Flag
+                 .equ	SREG_S	= 4	; Sign Bit
+                 .equ	SREG_H	= 5	; Half Carry Flag
+                 .equ	SREG_T	= 6	; Bit Copy Storage
+                 .equ	SREG_I	= 7	; Global Interrupt Enable
+                 
+                 ; SPL - Stack Pointer Low
+                 .equ	SP0	= 0	; Stack pointer bit 0
+                 .equ	SP1	= 1	; Stack pointer bit 1
+                 .equ	SP2	= 2	; Stack pointer bit 2
+                 .equ	SP3	= 3	; Stack pointer bit 3
+                 .equ	SP4	= 4	; Stack pointer bit 4
+                 .equ	SP5	= 5	; Stack pointer bit 5
+                 .equ	SP6	= 6	; Stack pointer bit 6
+                 .equ	SP7	= 7	; Stack pointer bit 7
+                 
+                 ; MCUCR - MCU Control Register
+                 .equ	ISC00	= 0	; Interrupt Sense Control 0 bit 0
+                 .equ	ISC01	= 1	; Interrupt Sense Control 0 bit 1
+                 .equ	ISC10	= 2	; Interrupt Sense Control 1 bit 0
+                 .equ	ISC11	= 3	; Interrupt Sense Control 1 bit 1
+                 .equ	SM	= 4	; Sleep Mode
+                 .equ	SE	= 5	; Sleep Enable
+                 
+                 
+                 ; ***** PORTD ************************
+                 ; PORTD - Data Register, Port D
+                 .equ	PORTD0	= 0	; 
+                 .equ	PD0	= 0	; For compatibility
+                 .equ	PORTD1	= 1	; 
+                 .equ	PD1	= 1	; For compatibility
+                 .equ	PORTD2	= 2	; 
+                 .equ	PD2	= 2	; For compatibility
+                 .equ	PORTD3	= 3	; 
+                 .equ	PD3	= 3	; For compatibility
+                 .equ	PORTD4	= 4	; 
+                 .equ	PD4	= 4	; For compatibility
+                 .equ	PORTD5	= 5	; 
+                 .equ	PD5	= 5	; For compatibility
+                 .equ	PORTD6	= 6	; 
+                 .equ	PD6	= 6	; For compatibility
+                 
+                 ; DDRD - Data Direction Register, Port D
+                 .equ	DDD0	= 0	; 
+                 .equ	DDD1	= 1	; 
+                 .equ	DDD2	= 2	; 
+                 .equ	DDD3	= 3	; 
+                 .equ	DDD4	= 4	; 
+                 .equ	DDD5	= 5	; 
+                 .equ	DDD6	= 6	; 
+                 
+                 ; PIND - Input Pins, Port D
+                 .equ	PIND0	= 0	; 
+                 .equ	PIND1	= 1	; 
+                 .equ	PIND2	= 2	; 
+                 .equ	PIND3	= 3	; 
+                 .equ	PIND4	= 4	; 
+                 .equ	PIND5	= 5	; 
+                 .equ	PIND6	= 6	; 
+                 
+                 
+                 ; ***** EEPROM ***********************
+                 ; EEAR - EEPROM Read/Write Access
+                 .equ	EEARL	= EEAR	; For compatibility
+                 .equ	EEAR0	= 0	; EEPROM Read/Write Access bit 0
+                 .equ	EEAR1	= 1	; EEPROM Read/Write Access bit 1
+                 .equ	EEAR2	= 2	; EEPROM Read/Write Access bit 2
+                 .equ	EEAR3	= 3	; EEPROM Read/Write Access bit 3
+                 .equ	EEAR4	= 4	; EEPROM Read/Write Access bit 4
+                 .equ	EEAR5	= 5	; EEPROM Read/Write Access bit 5
+                 .equ	EEAR6	= 6	; EEPROM Read/Write Access bit 6
+                 
+                 ; EEDR - EEPROM Data Register
+                 .equ	EEDR0	= 0	; EEPROM Data Register bit 0
+                 .equ	EEDR1	= 1	; EEPROM Data Register bit 1
+                 .equ	EEDR2	= 2	; EEPROM Data Register bit 2
+                 .equ	EEDR3	= 3	; EEPROM Data Register bit 3
+                 .equ	EEDR4	= 4	; EEPROM Data Register bit 4
+                 .equ	EEDR5	= 5	; EEPROM Data Register bit 5
+                 .equ	EEDR6	= 6	; EEPROM Data Register bit 6
+                 .equ	EEDR7	= 7	; EEPROM Data Register bit 7
+                 
+                 ; EECR - EEPROM Control Register
+                 .equ	EERE	= 0	; EEPROM Read Enable
+                 .equ	EEWE	= 1	; EEPROM Write Enable
+                 .equ	EEMWE	= 2	; EEPROM Master Write Enable
+                 
+                 
+                 
+                 ; ***** LOCKSBITS ********************************************************
+                 .equ	LB1	= 0	; Lockbit
+                 .equ	LB2	= 1	; Lockbit
+                 
+                 
+                 ; ***** FUSES ************************************************************
+                 ; LOW fuse bits
+                 
+                 
+                 
+                 ; ***** CPU REGISTER DEFINITIONS *****************************************
+                 .def	XH	= r27
+                 .def	XL	= r26
+                 .def	YH	= r29
+                 .def	YL	= r28
+                 .def	ZH	= r31
+                 .def	ZL	= r30
+                 
+                 
+                 
+                 ; ***** DATA MEMORY DECLARATIONS *****************************************
+                 .equ	FLASHEND	= 0x03ff	; Note: Word address
+                 .equ	IOEND	= 0x003f
+                 .equ	SRAM_START	= 0x0060
+                 .equ	SRAM_SIZE	= 128
+                 .equ	RAMEND	= 0x00df
+                 .equ	XRAMEND	= 0x0000
+                 .equ	E2END	= 0x007f
+                 .equ	EEPROMEND	= 0x007f
+                 .equ	EEADRBITS	= 7
+                 #pragma AVRPART MEMORY PROG_FLASH 2048
+                 #pragma AVRPART MEMORY EEPROM 128
+                 #pragma AVRPART MEMORY INT_SRAM SIZE 128
+                 #pragma AVRPART MEMORY INT_SRAM START_ADDR 0x60
+                 
+                 
+                 
+                 
+                 
+                 ; ***** INTERRUPT VECTORS ************************************************
+                 .equ	INT0addr	= 0x0001	; External Interrupt Request 0
+                 .equ	INT1addr	= 0x0002	; External Interrupt Request 1
+                 .equ	ICP1addr	= 0x0003	; Timer/Counter1 Capture Event
+                 .equ	OC1addr	= 0x0004	; Timer/Counter1 Compare Match
+                 .equ	OVF1addr	= 0x0005	; Timer/Counter1 Overflow
+                 .equ	OVF0addr	= 0x0006	; Timer/Counter0 Overflow
+                 .equ	URXCaddr	= 0x0007	; UART, Rx Complete
+                 .equ	UDREaddr	= 0x0008	; UART Data Register Empty
+                 .equ	UTXCaddr	= 0x0009	; UART, Tx Complete
+                 .equ	ACIaddr	= 0x000a	; Analog Comparator
+                 
+                 .equ	INT_VECTORS_SIZE	= 11	; size in words
+                 
+                 #pragma AVRPART CORE INSTRUCTIONS_NOT_SUPPORTED break
+                 
+                 #endif  /* _2313DEF_INC_ */
+                 
+                 ; ***** END OF FILE ******************************************************
+                 .list
+                 
+                 ;.equ	xtal	= 4433619
+                 ;.equ	xtal	= 8000000
+                 .equ	xtal	= 10000000
+                 
+                 ; Bekende referentie C
+                 ;.equ	_Cref	= 100		; 100.0pF
+                 .equ	_Cref	= 1000-46	; 944.0pF
+                 
+                 .equ	prescale = 64		; timer0 prescaler count
+                 ;.equ	prescale = 256		; timer0 prescaler count
+                 
+                 ; Maximale tijd die we meten voor pulsen.
+                 ; Bij 10MHz en prescaler van 64 (timer0) is dat minimaal 1.22 kHz (0,82ms)
+                 ;.equ	portmax	= 0x7f		; 128 * 64 / 10MHz = 1.22 kHz
+                 
+                 
+                 .macro	IO	; <name> <port> <pin>
+                 .set	prt_@0		= PORT@1
+                 .set	pin_@0		= PIN@1		; Input use PIN
+                 .set	ddr_@0		= DDR@1
+                 .set	bit_@0		= P@1@2
+                 .endmacro
+                 
+                 .macro	IOInp	; <name>
+                 	cbi	ddr_@0,bit_@0
+                 .endmacro
+                 
+                 .macro	IOOut	; <name>
+                 	sbi	ddr_@0,bit_@0
+                 .endmacro
+                 
+                 .macro	IOSet	; <name>
+                 	sbi	prt_@0,bit_@0
+                 .endmacro
+                 
+                 .macro	IOClear	; <name>
+                 	cbi	prt_@0,bit_@0
+                 .endmacro
+                 
+                 .macro	storeX	; <memory>
+                 	ldi	ZL,low(@0)
+                 	rcall	stX
+                 .endmacro
+                 
+                 .macro	storeY	; <memory>
+                 	ldi	ZL,low(@0)
+                 	rcall	stY
+                 .endmacro
+                 
+                 .macro	loadX	; <memory>
+                 	ldi	ZL,low(@0)
+                 	rcall	ldX
+                 .endmacro
+                 
+                 .macro	loadY	; <memory>
+                 	ldi	ZL,low(@0)
+                 	rcall	ldY
+                 .endmacro
+                 
+                 
+                 ;***** Global 
+                 ;
+                 ;            +--+-+--+
+                 ;     !RESET |  |_|  | VCC
+                 ;    (RX)PD0 |       | PB7(SCK)
+                 ;    (TX)PD1 |       | PB6(MISO)
+                 ;      XTAL2 |       | PB5(MOSI)
+                 ;      XTAL1 |       | PB4
+                 ;  (INT0)PD2 |       | PB3(OC1)
+                 ;  (INT1)PD3 |       | PB2
+                 ;    (T0)PD4 |       | PB1(AIN1)
+                 ;    (T1)PD5 |       | PB0(AIN0)
+                 ;        GND |       | PD6(ICP)
+                 ;            +-------+
+                 ;
+                 ;
+                 ; PD0	RS232 	RX
+                 ; PD1	RS232 	TX
+                 ; PD2	Relay input
+                 ; PD3	Relay ref C
+                 ; PD4	
+                 ; PD5	Frequence input
+                 ; PD6	
+                 ; PD7	Bestaat niet
+                 ;
+                 ; PB0	Switch Calibrate
+                 ; PB1	Switch Mode
+                 ; PB2	LCD		RS
+                 ; PB3	LCD		EN
+                 ; PB4	LCD		D4
+                 ; PB5	LCD		D5
+                 ; PB6	LCD		D6
+                 ; PB7	LCD		D7
+                 
+                 IO	freq,D,5		; T1 Freq input 16 bit counter
+                 IO	relay_refc,D,3		; Relay reference C
+                 IO	relay_inp,D,2		; Relay L or C
+                 IO	mode,B,1		; Switch L or C
+                 IO	calibr,B,0		; Switch calibrate
+                 
+                 .EQU	lcd_port	= PORTB
+                 .EQU	lcd_ddr		= DDRB 
+                 .EQU	lcd_rs		= PB2
+                 .EQU	lcd_en		= PB3
+                 
+                 ;***** Registers
+                 .undef	XH	; r27
+                 .undef	XL	; r26
+                 .undef	YH	; r29
+                 .undef	YL	; r28
+                 
+                 .def	freqL	= r1
+                 .def	freqH	= r2
+                 
+                 .def	RY0	= r4
+                 .def	RY1	= r5
+                 .def	RY2	= r6
+                 .def	RY3	= r7
+                 
+                 .def	RR0	= r8
+                 .def	RR1	= r9
+                 .def	RR2	= r10
+                 .def	RR3	= r11
+                 .def	RR4	= r12
+                 
+                 .def	ssreg	= r28
+                 .def	porttim	= r29
+                 .def	portval	= r15
+                 
+                 .def	RX0	= r16
+                 .def	RX1	= r17
+                 .def	RX2	= r18
+                 .def	RX3	= r19
+                 .def	RX4	= r20
+                 .def	RX5	= r21
+                 .def	RX6	= r22
+                 .def	RX7	= r23
+                 
+                 .def	ticks	= r24		; decrement every timer1 interrupt (8,192ms)
+                 
+                 .def	menu	= r25
+                 .def	chr	= r26		; output char
+                 .def	tmp	= r27		; Scratchregister
+                 
+                 .undef	ZH
+                 .def	zero	= r31		; ZH
+                 
+                 .equ	mCap	= 0		; Menu values
+                 .equ	mInd	= 1
+                 .equ	mFrqC	= 2
+                 .equ	mFrqL	= 3
+                 .equ	mCnst	= 4		; Display constants L & C
+                 .equ	mEnd	= 5
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- SRAM variablen
+                 ;--------------------------------------------------------------------
+                 .dseg
+                 .equ	buflen	= 12
+                 
+000060           Cref:	.byte	4			; C Reference
+000064           N1:	.byte	4			; Count freq F1
+000068           N2:	.byte	4			; Count freq F2
+00006c           NQ1:	.byte	4			; Count freq F1^2
+000070           NQ2:	.byte	4			; Count freq F2^2
+000074           ND:	.byte	4			; Count freq F1^2 - F2^2
+000078           C:	.byte	4			; OSC Capaciteit
+00007c           L:	.byte	4			; OSC Inductie
+000080           buf:	.byte	buflen			; Buffer number string
+                 endbuf:	
+00008c           KM1:	.byte	4			; -2
+000090           K10:	.byte	4			; 10
+000094           K100:	.byte	4			; 100
+                 ;KTMP:	.byte	4			; 
+000098           KL:	.byte	4			; Constant L calculation
+00009c           KFRQ:	.byte	4			; Constant frequence counter
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Interrupt table AT90S2313
+                 ;--------------------------------------------------------------------
+                 .cseg
+                 .org 0
+000000 c075      	rjmp	RESET			; Reset Handle
+000001 9518      	reti				; IRQ0 Handler
+000002 9518      	reti				; IRQ1 Handler
+000003 9518      	reti				; Timer1 Capture Handler
+000004 9518      	reti				; Timer1 Compare Handler
+000005 c068      	rjmp	TIMER1			; Timer1 Overflow Handler
+000006 c05a      	rjmp	TIMER0			; Timer0 Overflow Handler
+000007 9518      	reti				; UART RX Complete Handler
+000008 9518      	reti				; UDR Empty Handler
+000009 9518      	reti				; UART TX Complete Handler
+00000a 9518      	reti				; Analog Comparator Handler
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Text constants
+                 ;--------------------------------------------------------------------
+                 
+00000b 434c
+00000c 4d20
+00000d 7465
+00000e 7265
+00000f 202c
+000010 4550
+000011 4630
+000012 4f4b
+000013 0000      tHead:	.db	"LC Meter, PE0FKO",0,0
+000014 2020
+000015 4320
+000016 7061
+000017 6361
+000018 7469
+000019 6965
+00001a 2074
+00001b 2020
+00001c 0000      tCap:	.db	"   Capaciteit   ",0,0
+00001d 2020
+00001e 4920
+00001f 646e
+000020 6375
+000021 6974
+000022 2065
+000023 2020
+000024 2020
+000025 0000      tIndc:	.db	"   Inductie     ",0,0
+000026 2020
+000027 7246
+000028 7165
+000029 6575
+00002a 746e
+00002b 6569
+00002c 4320
+00002d 2020
+00002e 0000      tFreqC:	.db	"  Frequentie C  ",0,0
+00002f 2020
+000030 7246
+000031 7165
+000032 6575
+000033 746e
+000034 6569
+000035 4c20
+000036 2020
+000037 0000      tFreqL:	.db	"  Frequentie L  ",0,0
+000038 2020
+000039 2020
+00003a 2020
+00003b 2020
+00003c 2020
+00003d 2020
+00003e 2020
+00003f 2020
+000040 0000      tConst:	.db	"                ",0,0
+000041 2a20
+000042 6143
+000043 696c
+000044 7262
+000045 7461
+000046 6e69
+000047 2a67
+000048 2020
+000049 0000      tCali:	.db	" *Calibrating*  ",0,0
+00004a 2a20
+00004b 6f4e
+00004c 6f20
+00004d 6373
+00004e 202a
+00004f 2020
+000050 2020
+000051 2020
+000052 0000      tNoOSC:	.db	" *No osc*       ",0,0
+000053 7020
+000054 0046      tpF:	.db	" pF",0
+000055 6e20
+000056 0048      tnH:	.db	" nH",0
+000057 4820
+000058 007a      tHz:	.db	" Hz",0
+                 
+000059 9d14
+00005a af26
+00005b 0038      ptrHdr:	.db	tCap,tIndc+0x80,tFreqC,tFreqL+0x80,tConst,0
+00005c 00f5
+00005d 00fc
+00005e 0103
+00005f 010f
+000060 011b      ptrFnc:	.dw	fCap,fIndc,fFrqC,fFrqL,fCnst
+                 
+                 ;ptrFnc:	.dw	ret0,ret0,ret0,ret0,ret0,ret0
+                 ;ret0:	ret
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Timer0 overflow interupt
+                 ;-- Every 6,5536ms, Xtal=10Mhz, div=256, cnt=256
+                 ;--------------------------------------------------------------------
+000061 b7cf      TIMER0:	in	ssreg,SREG
+                 
+000062 958a      	dec	ticks			; Ticks for extra timer!
+                 
+000063 95da      	dec	porttim
+                 ;	andi	porttim,portmax		; Only portmax value
+000064 f479      	brne	ret1
+                 
+000065 f016      	brts	x0
+000066 b41c      	  in	freqL,tcnt1l		; Save Timer1 16 bit freq value
+000067 b42d      	  in	freqH,tcnt1h
+                 	  ;set				; T=1, ready sample
+                 ;	  sbr	ssreg,1<<SREG_T		; T=1, ready sample
+                 	x0:
+                 
+000068 bddd      	out	TCNT1H,porttim		; Clear the freq counter
+000069 bddc      	out	TCNT1L,porttim
+                 
+00006a 2ddf      	mov	porttim,portval		; Next timer count
+                 
+00006b bfcf      	out	SREG,ssreg
+00006c 9468      	set				; T=1, ready sample
+00006d 9518      	reti
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Timer1 overflow interupt
+                 ;--------------------------------------------------------------------
+00006e b7cf      TIMER1:	in	ssreg,SREG
+                 
+00006f 20ff      	tst	portval			; Only the first time
+000070 f419      	brne	ret1			;  portval is zero then.
+                 
+000071 95d1      	neg	porttim			; portval = -porttim
+                 ;	andi	porttim,portmax
+000072 2efd      	mov	portval,porttim
+                 
+000073 e0d1      	ldi	porttim,1		; Next timer count
+                 
+000074 bfcf      ret1:	out	SREG,ssreg
+000075 9518      	reti
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Reset / Main
+                 ;--------------------------------------------------------------------
+                 RESET:
+000076 94f8      	cli				;Disable global interrupts
+                 
+                 	; Load stack pointer
+000077 edbf      	ldi	tmp,low(RAMEND)
+000078 bfbd      	out	SPL,tmp
+                 
+                 	; Port B is output (LCD)
+000079 efbc      	ldi	tmp,0b11111100		; PB7..PB2 Output LCD
+00007a bbb7      	out	lcd_ddr,tmp
+00007b 98c2      	cbi	lcd_port,lcd_rs		; LCD RS=0
+00007c 98c3      	cbi	lcd_port,lcd_en		; LCD EN=0
+                 
+00007d 988d      	IOInp	freq			; Freq counter input
+00007e 9895      	IOClear	freq			; High ohm input
+                 
+00007f 9a8b      	IOOut	relay_refc		; Relay output
+000080 9a93      	IOSet	relay_refc		; Relay off (via TOR)
+                 
+000081 9a8a      	IOOut	relay_inp		; Relay output
+000082 9a92      	IOSet	relay_inp		; Relay off (via TOR)
+                 
+000083 98b9      	IOInp	mode			; Switch mode
+000084 9ac1      	IOSet	mode			; Source sync
+                 
+000085 98b8      	IOInp	calibr			; Switch calibrate
+000086 9ac0      	IOSet	calibr			; Source sync
+                 
+                 
+                 	; GIMSK: General Interrupt FLAG
+000087 e0b0      	ldi	tmp,(0<<INT0)|(0<<INT1)
+000088 bfbb      	out	GIMSK,tmp
+                 
+                 	; TIMSK: Timer/Counter Interrupt Mask
+                 	; TOIE1: Timer/Counter1 Overflow Interrupt Enable
+                 	; OCIE1A: Timer/Counter1 Output Compare Match Interrupt Enable
+                 	; TICIE1: Timer/Counter1 Input Capture Interrupt Enable
+                 	; TOIE0: Timer/Counter0 Overflow Interrupt Enable
+000089 e8b2      	ldi	tmp,(1<<TOIE1)|(0<<OCIE1A)|(0<<TICIE1)|(1<<TOIE0)
+00008a bfb9      	out	TIMSK,tmp
+                 
+                 	; MCUCR
+                 	; SE: Sleep Enable
+                 	; SM: Sleep Mode
+                 	; ISC11, ISC10: Interrupt Sense Control 1 Bit 1 and Bit 0
+                 	; ISC01, ISC00: Interrupt Sense Control 0 Bit 1 and Bit 0
+00008b e2b0      	ldi	tmp,(1<<SE)|(0<<SM)|(0<<ISC10)|(0<<ISC11)|(0<<ISC00)|(0<<ISC01)
+00008c bfb5      	out	MCUCR,tmp
+                 
+                 	; Timer0, Clock/256
+                 	; Maximale tijd die we meten voor pulsen.
+                 	; Bij 10MHz en prescaler van 64 is dat minimaal 610 Hz (1,6384ms)
+                 .if prescale == 64
+00008d e0b3      	ldi	tmp,(0<<CS02)|(1<<CS01)|(1<<CS00)	; 64
+                 .endif
+                 .if prescale == 256
+                 .endif
+00008e bfb3      	out	TCCR0,tmp
+                 
+                 	; Timer1
+                 	; COM1A1, COM1A0: Compare Output Mode1, Bits 1 and 0
+                 	; PWM11, PWM10: Pulse Width Modulator Select Bits
+00008f e0b0      	ldi	tmp,(0<<COM1A1)|(0<<COM1A0)|(0<<PWM11)|(0<<PWM10)
+000090 bdbf      	out	TCCR1A,tmp
+                 	;
+                 	; ICNC1: Input Capture1 Noise Canceler
+                 	; ICES1: Input Capture1 Edge Select
+                 	; CTC1: Clear Timer/Counter1 on Compare Match
+                 	; CS12, CS11, CS10: Clock Select1, Bits 2, 1 and 0 
+                 	; 	111 = External Pin T1, rising edge
+000091 e0b7      	ldi	tmp,(0<<ICNC1)|(0<<ICES1)|(0<<CTC1)|(1<<CS12)|(1<<CS11)|(1<<CS10)
+000092 bdbe      	out	TCCR1B,tmp
+                 
+000093 9478      	sei				; Enable the interrupts
+                 
+                 	; Long delay of 15ms needded for the LCD
+000094 e083      	ldi	ticks,3			; 20ms
+000095 d1df      	rcall	dlong
+                 
+                 ;	Init LCD interface
+000096 d1a5      	rcall	lcd_init
+                 
+                 ;	RS232 Interface
+                 ;	rcall	rs232_init
+                 
+000097 27ff      	clr	zero			; ZH Always zero for store functions
+                 
+                 	; Store the constants in SRAM
+000098 ef0f      	ldi	RX0,-1			; KM1 = -1
+000099 ef1f      	ldi	RX1,-1
+00009a ef2f      	ldi	RX2,-1
+00009b ef3f      	ldi	RX3,-1
+00009c e8ec
+00009d d140      	storeX	KM1
+                 
+                 	; f = N * KFRQ / Portval / 100
+                 	; KFRQ = Xtal / (prescaler * 256) * 100
+                 .equ	_KFRQ = xtal*100/(256*prescale)
+00009e e60b      	ldi	RX0,byte1(_KFRQ)
+00009f ee1e      	ldi	RX1,byte2(_KFRQ)
+0000a0 e020      	ldi	RX2,byte3(_KFRQ)
+0000a1 e030      	ldi	RX3,byte4(_KFRQ)
+0000a2 e9ec
+0000a3 d13a      	storeX	KFRQ
+                 
+                 
+                 	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * sqrt(1000)
+                 .equ	_KL = 8245938		; prescale=64 @10MHz
+                 ;.equ	_KL = 			; prescale=256 @10MHz
+                 
+                 ;	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * 10^2
+                 ;.equ	_KL = 26075945		; prescale=64 @10MHz
+                 ;.equ	_KL = 104303783		; prescale=256 @10MHz
+                 
+                 ;	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * 10^2 * sqrt(10)
+                 ;.equ	_KL = 82459381		; prescale=64 @10MHz
+                 ;.equ	_KL = 329837524		; prescale=256 @10MHz
+0000a4 eb02      	ldi	RX0,byte1(_KL)		; RX = K
+0000a5 ed12      	ldi	RX1,byte2(_KL)
+0000a6 e72d      	ldi	RX2,byte3(_KL)
+0000a7 e030      	ldi	RX3,byte4(_KL)
+0000a8 e9e8
+0000a9 d134      	storeX	KL
+                 
+0000aa eb0a      	ldi	RX0,byte1(_Cref)	; Cref = _Cref
+0000ab e013      	ldi	RX1,byte2(_Cref)
+0000ac 2722      	clr	RX2
+0000ad 2733      	clr	RX3
+0000ae e6e0
+0000af d12e      	storeX	Cref
+                 
+0000b0 e00a      	ldi	RX0,byte1(10)		; K10 = 10
+0000b1 e010      	ldi	RX1,byte2(10)
+0000b2 2722      	clr	RX2
+0000b3 2733      	clr	RX3
+0000b4 e9e0
+0000b5 d128      	storeX	K10
+                 
+0000b6 e604      	ldi	RX0,byte1(100)		; K100 = 100
+0000b7 e010      	ldi	RX1,byte2(100)
+0000b8 2722      	clr	RX2
+0000b9 2733      	clr	RX3
+0000ba e9e4
+0000bb d122      	storeX	K100
+                 
+                 ;--	DEBUG
+                 .if 0
+                 .endif
+                 ;--	DEBUG
+                 
+                 	; Display welkome string
+0000bc d195      	rcall	lcd_line0		; Line 0, Char 0
+0000bd e1e6      	ldi	ZL,low(2*thead)		; "LC Meter, PE0FKO"
+0000be d172      	rcall	print_str
+                 
+0000bf d063      	rcall	calibrate		; Do calibrate
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Start of the menu selection
+                 ;--------------------------------------------------------------------
+0000c0 e090      	ldi	menu,mCap		; Start C menu
+                 
+0000c1 9bb1      	sbis	pin_mode,bit_mode	; Mode key pressed?
+0000c2 6890      	ori	menu,0x80		;  Special menu's enabled
+                 
+                 MenuStart:
+0000c3 2fe9      	mov	ZL,menu			; Get menu number
+0000c4 70ef      	andi	ZL,0x0f			; Remove the flag(s)
+0000c5 54ee      	subi	ZL,-low(2*ptrHdr)	; Add pointer to header table
+0000c6 95c8      	lpm				; Get ptr text and bit7
+0000c7 fc07      	sbrc	r0,7
+0000c8 9892      	IOClear	relay_inp		; Switch input relay On
+                 
+0000c9 2de0      	mov	ZL,r0
+0000ca 77ef      	andi	ZL,0x7f			; Remove bit7
+0000cb 0fee      	lsl	ZL			; To real cseg pointer
+                 
+0000cc d180      	rcall	lcd_clear		; LCD Clear
+0000cd d184      	rcall	lcd_line0		; Line 0, Char 0
+0000ce d162      	rcall	print_str
+                 
+0000cf 9bb1      wait2:	sbis	pin_mode,bit_mode	; Wait release mode switch
+0000d0 cffe      	rjmp	wait2
+                 
+                 MenuMain:
+0000d1 2fe9      	mov	ZL,menu			; Menu * 2 and remove special flags
+0000d2 70ef      	andi	ZL,0x0f
+0000d3 0fee      	lsl	ZL
+0000d4 54e8      	subi	ZL,-low(2*ptrFnc)	; Pointer to menu function table
+0000d5 d019      	rcall	MenuFunc		; Call the menu in Z
+                 
+0000d6 e580      	ldi	ticks,80
+0000d7 9588      wait:	sleep
+                 
+0000d8 9bb0      	sbis	pin_calibr,bit_calibr	; Calibrate key
+0000d9 c005      	rjmp	DoCalibrate		;  then calibrate
+                 
+0000da 9bb1      	sbis	pin_mode,bit_mode	; Mode key
+0000db c007      	rjmp	MenuNext		;  then next menu
+                 
+0000dc 2388      	tst	ticks
+0000dd f7ca      	brpl	wait
+                 
+0000de cff2      	rjmp	MenuMain
+                 
+                 DoCalibrate:
+0000df d043      	rcall	calibrate		; Do calibrate
+0000e0 9bb0      wait0:	sbis	pin_calibr,bit_calibr	; Wait release calibrate switch
+0000e1 cffe      	rjmp	wait0
+0000e2 cfee      	rjmp	MenuMain
+                 
+                 ;-- Start tail code
+                 MenuNext:
+0000e3 2fe9      	mov	ZL,menu			; Get menu number
+0000e4 70ef      	andi	ZL,0x0f			; Remove the flag(s)
+0000e5 54ee      	subi	ZL,-low(2*ptrHdr)	; Add pointer to header table
+0000e6 95c8      	lpm				; Get ptr text and bit7
+0000e7 fc07      	sbrc	r0,7
+0000e8 9a92      	IOSet	relay_inp		; Switch input relay Off
+                 
+                 ;-- Increment the menu
+                 ;	sbrc	menu,7
+                 ;	jmp	highMenu
+0000e9 709f      	andi	menu,0x0f		; TIJDELIJK
+                 
+0000ea 9593      	inc	menu
+0000eb 3095      	cpi	menu,mEnd
+0000ec f00c      	brlt	mi
+0000ed 2799      	clr	menu
+0000ee cfd4      mi:	rjmp	MenuStart
+                 
+                 ;highMenu:
+                 
+                 
+                 
+                 MenuFunc:				; Jump via the return stack
+0000ef 95c8      	lpm				; to the func pointed by Z
+0000f0 920f      	push	r0
+0000f1 5fef      	subi	ZL,-1			; ZL++
+0000f2 95c8      	lpm
+0000f3 920f      	push	r0
+0000f4 9508      ret6:	ret
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calculate the unknow Cx
+                 ;--------------------------------------------------------------------
+0000f5 d077      fCap:	rcall	calc1
+0000f6 f3e8      	brcs	ret6			; OSC not running
+0000f7 e7e8
+0000f8 d0ef      	loadX	C			; RX = C
+0000f9 d09c      	rcall	calc2
+0000fa eae6      	ldi	ZL,low(2*tpF)
+0000fb c12b      	rjmp	print1
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calculate the unknow Lx
+                 ;--------------------------------------------------------------------
+0000fc d070      fIndc:	rcall	calc1
+0000fd f3b0      	brcs	ret6			; OSC not running
+0000fe e7ec
+0000ff d0e8      	loadX	L			; RX = L
+000100 d095      	rcall	calc2
+000101 eaea      	ldi	ZL,low(2*tnH)
+000102 c124      	rjmp	print1
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calculate Frequence C
+                 ;--------------------------------------------------------------------
+000103 d056      fFrqC:	rcall	sample			; Get a freq sample
+000104 f378      	brcs	ret6			; OSC not running
+                 
+000105 e9ec
+000106 d0e6      	loadY	KFRQ			; 15.2588*100*10	10e6/2^16 (10MHz)
+000107 d099      	rcall	mul32			; RX *= RY
+                 
+000108 d0e9      	rcall	ldYportval		; RY = portval
+000109 d0ac      	rcall	div48			; RX = RX / RY
+                 
+00010a e9e4
+00010b d0e1      	loadY	K100
+00010c d0a9      	rcall	div48			; RX = RX / RY
+                 
+00010d eaee      	ldi	ZL,low(2*tHz)
+00010e c118      	rjmp	print1
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calculate Frequence L
+                 ;--------------------------------------------------------------------
+00010f d04a      fFrqL:	rcall	sample			; Get a freq sample
+000110 f318      	brcs	ret6			; OSC not running
+                 
+000111 e9ec
+000112 d0da      	loadY	KFRQ			; 152,587890625 * 100 * 10	10e6/2^16 (10MHz)
+000113 d08d      	rcall	mul32			; RX *= RY
+                 
+000114 d0dd      	rcall	ldYportval		; RY = portval
+000115 d0a0      	rcall	div48			; RX = RX / RY
+                 
+000116 e9e4
+000117 d0d5      	loadY	K100
+000118 d09d      	rcall	div48			; RX = RX / RY
+                 
+000119 eaee      	ldi	ZL,low(2*tHz)
+00011a c10c      	rjmp	print1
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Display constants
+                 ;--------------------------------------------------------------------
+00011b e7ec
+00011c d0cb      fCnst:	loadX	L
+00011d eaea      	ldi	ZL,low(2*tnH)
+00011e d108      	rcall	print1
+                 
+00011f e7e8
+000120 d0c7      	loadX	C
+000121 eae6      	ldi	ZL,low(2*tpF)
+000122 c116      	rjmp	print0
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calibrate the timer
+                 ;--------------------------------------------------------------------
+                 calibrate:
+000123 d130      	rcall	lcd_line1		; Line 1, Char 0
+000124 e8e2      	ldi	ZL,low(2*tcali)		; Print header
+000125 d10b      	rcall	print_str
+                 
+000126 e180      	ldi	ticks,16		; 100ms for stable OSC
+000127 d14d      	rcall	dlong
+                 
+000128 94f8      	cli				; Disable interrupt
+                 
+                 	; Init the timer registers to default zero
+000129 27bb      	clr	tmp
+00012a bdbd      	out	TCNT1H,tmp		; Clear the freq counter
+00012b bdbc      	out	TCNT1L,tmp
+00012c bfb2      	out	TCNT0,tmp		; Timer0 init
+                 
+00012d 27dd      	clr	porttim			; Start counting the porttim
+00012e 24ff      	clr	portval
+                 
+00012f e8b2      	ldi	tmp,(1<<TOV0)|(1<<TOV1)	; Reset hanging timer interrupt
+000130 bfb8      	out	TIFR,tmp
+                 
+000131 94e8      	clt				; T=0
+000132 9478      	sei				; Enable interrupt
+000133 d026      	rcall	sample			; Wait for the counter init
+                 
+000134 d025      	rcall	sample			; Delay only
+                 
+000135 d024      	rcall	sample			; Get N1
+000136 f360      	brcs	calibrate		; OSC not running
+                 
+000137 e6e4
+000138 d0a5      	storeX	N1			; N1 = N1
+000139 d063      	rcall	rxquad			; RX = N1^2
+00013a e6ec
+00013b d0a2      	storeX	NQ1			; NQ1 = N1^2
+                 
+00013c 9893      	IOClear	relay_refc		; Switch Cref On
+00013d d01c      	rcall	sample			; Delay only, stable osc
+                 
+00013e d02e      	rcall	calc1			; Get N2 and calc
+                 
+00013f 9a93      	IOSet	relay_refc		; Switch Cref Off
+                 
+000140 f310      	brcs	calibrate		; OSC not running?
+                 
+                 	;--------------------------------------------------------------------
+                 	;-- Calculate the unknow C
+                 	;-- C[32] = Cref * N2^2 / (N1^2 - N2^2)
+                 	;--------------------------------------------------------------------
+                 debug1:
+000141 e6e0
+000142 d0a5      	loadX	Cref			; RX = Cref
+000143 e7e0
+000144 d0a8      	loadY	NQ2			; RY = N2^2
+000145 d05b      	rcall	mul32			; RX = RX * RY
+000146 e7e4
+000147 d0a5      	loadY	ND			; RY = N1^2 - N2^2
+000148 d06d      	rcall	div48			; RX = RX / RY
+000149 e7e8
+00014a d093      	storeX	C			; C = RX
+                 
+                 	;--------------------------------------------------------------------
+                 	;-- Calculate the unknow L
+                 	;-- L[32] = ( K * portval / N1 )^2 / C
+                 	;-- K[48] = 10^9 * 2^8 * prescaler / (2 * pi * Xtal) * 100 * sqrt(10)
+                 	;-- *100 (10^2) is nodig omdat we de C & L een factor 10 te groot is! ( x,0nH )
+                 	;--------------------------------------------------------------------
+                 
+00014b e9e8
+00014c d09b      	loadX	KL			; RX = K
+00014d d0a4      	rcall	ldYportval		; RY = portval
+00014e d052      	rcall	mul32			; RX *= RY
+00014f e6e4
+000150 d09c      	loadY	N1			; RY = N1
+000151 d064      	rcall	div48			; RX = RX / RY
+000152 d04a      	rcall	rxquad			; RX = RX^2
+000153 e7e8
+000154 d098      	loadY	C			; RY = C
+000155 d060      	rcall	div48			; RX = RX / RY
+000156 e7ec
+000157 d086      	storeX	L			; L = RX
+                 
+                 .if 0
+                 .else
+000158 9508      	ret
+                 .endif
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Sample
+                 ;--------------------------------------------------------------------
+                 
+000159 9588      sam0:	sleep				; Wait for a interrupt (timer)
+00015a f7f6      sample:	brtc	sam0			; Is there a sample?
+00015b 2d01      	mov	RX0,freqL		; RX = freq count
+00015c 2d12      	mov	RX1,freqH
+00015d 94e8      	clt				; T=0, take next freq sample
+                 
+00015e 2e00      	mov	r0,RX0			; Test zero value
+00015f 2a01      	or	r0,RX1
+000160 f031      	breq	err1			; if not zero there is a sample!
+000161 2722      	clr	RX2
+000162 2733      	clr	RX3
+000163 e6e8
+000164 d079      	storeX	N2			; N2 = sample
+                 
+000165 9488      	clc				; No error
+000166 9508      	ret
+                 
+                 err1:	; Freq count is zero then error message
+000167 d0ec      	rcall	lcd_line1		; Line 1, Char 0
+000168 e9e4      	ldi	ZL,low(2*tNoOSC)
+000169 d0c7      	rcall	print_str
+                 
+00016a 94e8      	clt				; Next sample now
+00016b 9408      	sec				; Error
+00016c 9508      	ret
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Calculate the unknow Cx
+                 ;-- Cx[32] = C * (NQ1^2 - NQ2^2) / NQ2^2
+                 ;--
+                 ;-- Calculate the unknow Lx
+                 ;-- Lx[32] = L * (NQ1^2 - NQ2^2) / NQ2^2
+                 ;--------------------------------------------------------------------
+                 
+00016d dfec      calc1:	rcall	sample			; Get N2
+00016e f050      	brcs	ret5			; OSC not running
+                 debug2:
+00016f d02d      	rcall	rxquad			; RX = RX^2
+000170 e7e0
+000171 d06c      nxt5:	storeX	NQ2			; NQ2 = N2^2
+                 
+000172 e6ec
+000173 d079      	loadY	NQ1			; RY = N1^2
+000174 d064      	rcall	sub32			; RY = RY - RX
+000175 f020      	brcs	negy			; C=1, Negative
+                 
+000176 e7e4
+000177 d06b      	storeY	ND			; ND = N1^2 - N2^2
+000178 9488      	clc				; No error
+                 
+000179 9508      ret5:	ret
+                 
+                 negy:
+                 ;	rcall	rs232_text
+                 ;	.db	"F1 Correction!",10,13,0,0
+00017a e6e4
+00017b d071      	loadY	N1
+00017c e6e8
+00017d d06a      	loadX	N2
+00017e d05a      	rcall	sub32			; RY = N1 - N2
+                 
+00017f e8ec
+000180 d067      	loadX	KM1			; RX = -1
+000181 d057      	rcall	sub32			; RY = RY + 1
+000182 f06a      	brmi	err3			; N1=1, meer dan 2 afwijking
+                 
+000183 e6e4
+000184 d068      	loadY	N1			; RY = N1
+000185 d053      	rcall	sub32			; RY = RY + 1
+000186 e6e4
+000187 d05b      	storeY	N1			; N1 = RY
+                 
+000188 2d04      	mov	RX0,RY0			; RX = N1^2
+000189 2d15      	mov	RX1,RY1
+00018a 2d26      	mov	RX2,RY2
+00018b 2d37      	mov	RX3,RY3
+00018c d014      	rcall	mul32
+00018d e6ec
+00018e d04f      	storeX	NQ1			; NQ1 = N1^2
+00018f cfe0      	rjmp	nxt5
+                 
+000190 9408      err3:	sec				; Error
+000191 2700      	clr	RX0			; RX = 0
+000192 2711      	clr	RX1
+000193 2722      	clr	RX2
+000194 2733      	clr	RX3
+000195 9508      	ret
+                 
+                 
+000196 e7e4
+000197 d055      calc2:	loadY	ND			; RY = NQ1^2 - NQ2^2
+000198 d008      	rcall	mul32			; RX = RX * RY
+000199 e7e0
+00019a d052      	loadY	NQ2			; RY = NQ2^2
+00019b d01a      	rcall	div48			; RX = RX / RY
+00019c 9508      	ret
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- RX[64] = RX[32]^2
+                 ;--------------------------------------------------------------------
+00019d 2e40      rxquad:	mov	RY0,RX0			; RX = RX^2
+00019e 2e51      	mov	RY1,RX1
+00019f 2e62      	mov	RY2,RX2
+0001a0 2e73      	mov	RY3,RX3
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- RX[64] = RX[32] * RY[32]
+                 ;--------------------------------------------------------------------
+0001a1 2777      mul32:	clr	RX7
+0001a2 2766      	clr	RX6
+0001a3 2755      	clr	RX5
+0001a4 1b44      	sub	RX4,RX4		; RX4=0, C=0
+0001a5 e2b1      	ldi	tmp,32+1
+                 
+0001a6 f420      mnxtb:	brcc	mnoadd
+0001a7 0d44      	add	RX4,RY0
+0001a8 1d55      	adc	RX5,RY1
+0001a9 1d66      	adc	RX6,RY2
+0001aa 1d77      	adc	RX7,RY3
+                 mnoadd:
+0001ab 9577      	ror	RX7
+0001ac 9567      	ror	RX6
+0001ad 9557      	ror	RX5
+0001ae 9547      	ror	RX4
+                 
+0001af 9537      	ror	RX3
+0001b0 9527      	ror	RX2
+0001b1 9517      	ror	RX1
+0001b2 9507      	ror	RX0
+                 
+0001b3 95ba      	dec	tmp
+0001b4 f789      	brne	mnxtb
+0001b5 9508      	ret
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- RX[48] = RX[48] / RY[32]
+                 ;--------------------------------------------------------------------
+0001b6 e3b1      div48:	ldi	tmp,48+1		; init loop counter
+                 
+0001b7 2488      	clr	RR0			; clear remainder Low byte
+0001b8 2499      	clr	RR1
+0001b9 24aa      	clr	RR2
+0001ba 24bb      	clr	RR3
+0001bb 18cc      	sub	RR4,RR4			; clear remainder High byte and carry
+                 
+0001bc 1f00      div1:	rol	RX0
+0001bd 1f11      	rol	RX1
+0001be 1f22      	rol	RX2
+0001bf 1f33      	rol	RX3
+0001c0 1f44      	rol	RX4
+0001c1 1f55      	rol	RX5
+                 
+0001c2 95ba      	dec	tmp
+0001c3 f409      	brne	div3
+0001c4 9508      	ret
+                 
+0001c5 1c88      div3:	rol	RR0
+0001c6 1c99      	rol	RR1
+0001c7 1caa      	rol	RR2
+0001c8 1cbb      	rol	RR3
+0001c9 1ccc      	rol	RR4
+                 
+0001ca 1884      	sub	RR0,RY0			;remainder = remainder - divisor
+0001cb 0895      	sbc	RR1,RY1
+0001cc 08a6      	sbc	RR2,RY2
+0001cd 08b7      	sbc	RR3,RY3
+0001ce 0acf      	sbc	RR4,zero
+                 
+0001cf f438      	brcc	div2			;if result negative
+0001d0 0c84      	add	RR0,RY0			;   restore remainder
+0001d1 1c95      	adc	RR1,RY1
+0001d2 1ca6      	adc	RR2,RY2
+0001d3 1cb7      	adc	RR3,RY3
+0001d4 1ecf      	adc	RR4,zero		; ZH is zero!
+0001d5 9488      	clc				;   clear carry to be shifted into result
+0001d6 cfe5      	rjmp	div1			;else
+0001d7 9408      div2:	sec				;   set carry to be shifted into result
+0001d8 cfe3      	rjmp	div1
+                 
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- RY[32] = RY[32] - RX[32]
+                 ;--------------------------------------------------------------------
+0001d9 1a40      sub32:	sub	RY0,RX0
+0001da 0a51      	sbc	RY1,RX1
+0001db 0a62      	sbc	RY2,RX2
+0001dc 0a73      	sbc	RY3,RX3
+0001dd 9508      	ret
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Store and load X & Y from SRAM
+                 ;--------------------------------------------------------------------
+0001de 9301      stX:	st	Z+,RX0
+0001df 9311      	st	Z+,RX1
+0001e0 9321      	st	Z+,RX2
+0001e1 9331      	st	Z+,RX3
+0001e2 9508      	ret
+                 
+0001e3 9241      stY:	st	Z+,RY0
+0001e4 9251      	st	Z+,RY1
+0001e5 9261      	st	Z+,RY2
+0001e6 9271      	st	Z+,RY3
+0001e7 9508      	ret
+                 
+0001e8 9101      ldX:	ld	RX0,Z+
+0001e9 9111      	ld	RX1,Z+
+0001ea 9121      	ld	RX2,Z+
+0001eb 9131      	ld	RX3,Z+
+0001ec 9508      	ret
+                 
+0001ed 9041      ldY:	ld	RY0,Z+
+0001ee 9051      	ld	RY1,Z+
+0001ef 9061      	ld	RY2,Z+
+0001f0 9071      	ld	RY3,Z+
+0001f1 9508      	ret
+                 
+                 ldYportval:
+0001f2 2c4f      	mov	RY0,portval		; RY = portval
+0001f3 2455      	clr	RY1
+0001f4 2466      	clr	RY2
+0001f5 2477      	clr	RY3
+0001f6 9508      	ret
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Convert 32bits RX to decimal string
+                 ;-- 12 char buffer (9 digits, 2 punt, null)
+                 ;;;-- 14 char buffer (10 digits, 3 punt, null)
+                 ;--------------------------------------------------------------------
+0001f7 e8ec      cvt:	ldi	ZL,low(endbuf)
+0001f8 e0a0      	ldi	chr,0
+0001f9 93a2      	st	-Z,chr
+                 ;	rcall	digit
+                 ;	ldi	chr,','
+                 ;	st	-Z,chr
+0001fa d019      	rcall	digit
+0001fb d018      	rcall	digit
+0001fc d017      	rcall	digit
+0001fd e2ae      	ldi	chr,'.'
+0001fe 93a2      	st	-Z,chr
+0001ff d014      	rcall	digit
+000200 d013      	rcall	digit
+000201 d012      	rcall	digit
+000202 e2ae      	ldi	chr,'.'
+000203 93a2      	st	-Z,chr
+000204 d00f      	rcall	digit
+000205 d00e      	rcall	digit
+000206 d00d      	rcall	digit
+                 
+000207 81a0      nxt2:	ld	chr,Z
+000208 33a0      	cpi	chr,'0'
+000209 f011      	breq	cvt1
+00020a 32ae      	cpi	chr,'.'
+00020b f419      	brne	ends
+00020c e2a0      cvt1:	ldi	chr,' '
+00020d 93a1      	st	Z+,chr
+00020e cff8      	rjmp	nxt2
+                 
+00020f 30a0      ends:	cpi	chr,0
+000210 f411      	brne	ret2
+000211 e3a0      	ldi	chr,'0'
+000212 93a2      	st	-Z,chr
+000213 9508      ret2:	ret
+                 
+                 
+000214 1baa      digit:	sub	chr,chr		; clear remainder and carry
+000215 e2b1      	ldi	tmp,32+1	; init loop counter
+000216 1f00      digit1:	rol	RX0
+000217 1f11      	rol	RX1
+000218 1f22      	rol	RX2
+000219 1f33      	rol	RX3
+00021a 95ba      	dec	tmp		; decrement counter
+00021b f041      	breq	digit3		; if done then return
+00021c 1faa      	rol	chr		; shift dividend into remainder
+00021d 50aa      	subi	chr,10		; remainder = remainder - divisor
+00021e f418      	brcc	digit2		;if result negative
+00021f 5fa6      	subi	chr,-10		;   restore remainder
+000220 9488      	clc			;   clear carry to be shifted into result
+000221 cff4      	rjmp	digit1		;else
+000222 9408      digit2:	sec			;   set carry to be shifted into result
+000223 cff2      	rjmp	digit1
+000224 5da0      digit3:	subi	chr,-'0'
+000225 93a2      	st	-Z,chr
+000226 9508      	ret
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- Print line 0 & 1
+                 ;--------------------------------------------------------------------
+                 
+000227 93ef      print1:	push	ZL			; Save for later print_str
+000228 d02b      	rcall	lcd_line1		; Line 1
+000229 dfcd      p0:	rcall	cvt			; RX to string
+00022a e8e0      	ldi	ZL,low(buf)
+00022b 91a1      nxt:	ld	chr,Z+
+00022c 23aa      	tst	chr
+00022d f011      	breq	endstr
+00022e d02a      	rcall	putch
+00022f cffb      	rjmp	nxt
+                 endstr:
+000230 91ef      	pop	ZL
+                 print_str:
+000231 95c8      	lpm
+000232 9631      	adiw	ZL,1
+000233 2000      	tst	r0
+000234 f019      	breq	ret3
+000235 2da0      	mov	chr,r0
+000236 d022      	rcall	putch
+000237 cff9      	rjmp	print_str
+000238 9508      ret3:	ret
+                 
+000239 93ef      print0:	push	ZL			; Save for later print_str
+00023a d017      	rcall	lcd_line0		; Line 0
+00023b cfed      	rjmp	p0
+                 
+                 ;--------------------------------------------------------------------
+                 ;-- LCD Functions
+                 ;--------------------------------------------------------------------
+                 
+                 lcd_init:
+00023c 98c2      	cbi	lcd_port,lcd_rs
+                 
+00023d e3a0      	ldi	chr,$30			;set DB4&DB5="H"
+00023e d022      	rcall	wr_lcd_1		;1) reset sequence 1
+00023f eca8      	ldi	chr,200			;5mS
+000240 d02d      	rcall	dX25uS			;(4.1mS minimum)
+                 
+000241 e3a0      	ldi	chr,$30			;set DB4&DB5="H"
+000242 d013      	rcall	wr_lcd8			;2) reset sequence 2 (100uS minimum in LCD spec)
+                 
+000243 e3a0      	ldi	chr,$30			;set DB4&DB5="H"
+000244 d011      	rcall	wr_lcd8			;3) reset sequence 3
+                 
+000245 e2a0      	ldi	chr,$20			;$20
+000246 d00f      	rcall	wr_lcd8			;4) set data mode = 4bit transfer
+                 
+000247 e2a8      	ldi	chr,0b00101000		;$28
+000248 d022      	rcall	wr_ins			;5) set charactor mode = 7 dots
+                 
+000249 e0a6      	ldi	chr,0b00000110
+00024a d020      	rcall	wr_ins			;6) set entry mode
+                 
+00024b e0ac      	ldi	chr,0b00001100
+00024c d01e      	rcall	wr_ins			;7) Display ON, cursor OFF, blink OFF
+                 
+                 lcd_clear:
+00024d e0a1      	ldi	chr,$01			;clear display
+00024e d01c      	rcall	wr_ins
+00024f e4a6      	ldi	chr,1750/25		;1,75mS (Spec 1,64mS)
+000250 d01d      	rcall	dX25uS
+000251 9508      ret4:	ret
+                 
+                 lcd_line0:
+000252 e8a0      	ldi	chr,$80+0x00		; Line 0
+000253 c017      	rjmp	wr_ins
+                 
+                 lcd_line1:
+000254 eca0      	ldi	chr,$80+0x40		; Line 1
+000255 c015      	rjmp	wr_ins
+                 
+                 wr_lcd8:				; Write comment in 8 bits mode
+000256 d00a      	rcall	wr_lcd_1
+000257 e0a8      	ldi	chr,200/25		; 200uS
+000258 c015      	rjmp	dX25uS			; Delay 32uS
+                 
+000259 9ac2      putch:	sbi	lcd_port,lcd_rs
+00025a d002      	rcall	wr_lcd
+00025b e0b2      	ldi	tmp,50/25		; 50uS
+00025c c011      	rjmp	dX25uS			; Delay 32uS
+                 
+00025d 93af      wr_lcd:	push	chr
+00025e d002      	rcall	wr_lcd_1
+00025f 91af      	pop	chr
+000260 95a2      	swap	chr
+                 wr_lcd_1:
+000261 7fa0      	andi	chr,0xF0
+000262 b3b8      	in	tmp,lcd_port
+000263 70bf      	andi	tmp,0x0F
+000264 2bab      	or	chr,tmp
+000265 bba8      	out	lcd_port,chr
+000266 0000      	nop
+000267 9ac3      	sbi	lcd_port,lcd_en
+000268 0000      	nop
+000269 98c3      	cbi	lcd_port,lcd_en
+                 duS:					; Delay small 7 cylces, at 8Mhz clock
+                 					;+3 cycles being "rcall"ed
+00026a 9508      	ret				;+4 cycles to return. 10 cycles total
+                 
+00026b 98c2      wr_ins:	cbi	lcd_port,lcd_rs
+00026c dff0      	rcall	wr_lcd
+00026d e0a4      	ldi	chr,4			; 100uS
+                 
+                 dX25uS:	;Xm Sec delay, X=chr
+00026e e1b9      	ldi	tmp,25			; 10MHz
+                 ;	ldi	tmp,11			; 4.433619Mhz
+00026f dffa      d25uS1:	rcall	duS			;+7
+000270 95ba      	dec	tmp			;+1
+000271 f7e9      	brne	d25uS1			;+2
+000272 95aa      	dec	chr
+000273 f7d1      	brne	dX25uS
+000274 9508      	ret
+                 
+                 ; N = uS * xtal / (256 * 256) / 10e6 
+                 ; 6,5536ms @ 10Mhz
+                 ; 8,192ms @ 8Mhz
+                 ; 14.78160ms @ 4.433619Mhz
+                 dlong:	; Delay long in steps of ticks * 6,5536ms
+000275 9588      	sleep
+000276 2388      	tst	ticks
+000277 f7e9      	brne	dlong
+000278 9508      	ret
+                 
+                 ;.include "rs232.inc"
+                 
+
+
+RESOURCE USE INFORMATION
+------------------------
+
+Notice:
+The register and instruction counts are symbol table hit counts,
+and hence implicitly used resources are not counted, eg, the
+'lpm' instruction without operands implicitly uses r0 and z,
+none of which are counted.
+
+x,y,z are separate entities in the symbol table and are
+counted separately from r26..r31 here.
+
+.dseg memory usage only counts static data declared with .byte
+
+AT90S2313 register use summary:
+r0 :   9 r1 :   2 r2 :   2 r3 :   0 r4 :   9 r5 :   9 r6 :   9 r7 :   9 
+r8 :   4 r9 :   4 r10:   4 r11:   4 r12:   5 r13:   0 r14:   0 r15:   5 
+r16:  17 r17:  17 r18:  16 r19:  16 r20:   5 r21:   4 r22:   3 r23:   3 
+r24:   6 r25:   9 r26:  45 r27:  34 r28:   4 r29:   8 r30:  65 r31:   3 
+x  :   0 y  :   0 z  :  24 
+Registers used: 30 out of 35 (85.7%)
+
+AT90S2313 instruction use summary:
+.lds  :   0 .sts  :   0 adc   :   7 add   :   2 adiw  :   1 and   :   0 
+andi  :   7 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
+brcc  :   3 brcs  :   8 breq  :   5 brge  :   0 brhc  :   0 brhs  :   0 
+brid  :   0 brie  :   0 brlo  :   0 brlt  :   1 brmi  :   1 brne  :   9 
+brpl  :   1 brsh  :   0 brtc  :   1 brts  :   1 brvc  :   0 brvs  :   0 
+bset  :   0 bst   :   0 cbi   :  11 cbr   :   0 clc   :   4 clh   :   0 
+cli   :   2 cln   :   0 clr   :  27 cls   :   0 clt   :   3 clv   :   0 
+clz   :   0 com   :   0 cp    :   0 cpc   :   0 cpi   :   4 cpse  :   0 
+dec   :   7 eor   :   0 icall :   0 ijmp  :   0 in    :   5 inc   :   1 
+ld    :  10 ldd   :   0 ldi   : 103 lds   :   0 lpm   :  15 lsl   :   2 
+lsr   :   0 mov   :  19 neg   :   1 nop   :   2 or    :   2 ori   :   1 
+out   :  17 pop   :   2 push  :   5 rcall : 117 ret   :  22 reti  :  10 
+rjmp  :  28 rol   :  16 ror   :   8 sbc   :   7 sbci  :   0 sbi   :  10 
+sbic  :   0 sbis  :   5 sbiw  :   0 sbr   :   0 sbrc  :   2 sbrs  :   0 
+sec   :   4 seh   :   0 sei   :   2 sen   :   0 ser   :   0 ses   :   0 
+set   :   1 sev   :   0 sez   :   0 sleep :   3 st    :  14 std   :   0 
+sts   :   0 sub   :   5 subi  :   7 swap  :   1 tst   :   5 wdr   :   0 
+
+Instructions used: 53 out of 102 (52.0%)
+
+AT90S2313 memory use summary [bytes]:
+Segment   Begin    End      Code   Data   Used    Size   Use%
+---------------------------------------------------------------
+[.cseg] 0x000000 0x0004f2   1094    172   1266    2048  61.8%
+[.dseg] 0x000060 0x0000a0      0     64     64     128  50.0%
+[.eseg] 0x000000 0x000000      0      0      0     128   0.0%
+
+Assembly complete, 0 errors, 0 warnings
