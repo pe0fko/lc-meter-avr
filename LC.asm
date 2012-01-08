@@ -21,8 +21,8 @@
 ;**************************************************************************/
 .nolist
 ; There is no code deference between the AT90S2313 and ATtiny2313!
-.include "2313def.inc"		; AT90S2313
-;.include "tn2313def.inc"	; ATtiny2313
+;.include "2313def.inc"		; AT90S2313
+.include "tn2313def.inc"	; ATtiny2313
 .list
 
 ;.equ	xtal		= 8000000	; 8MHz
