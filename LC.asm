@@ -1,37 +1,79 @@
 ;************************************************************************
 ;**
-;** Project......: L & C Meter
+;** Project......: L & C Meter, http://home.ict.nl/~fredkrom/
 ;**
-;** Platform.....: AT90S2313
+;** Platform.....: AT90S2313 or ATtiny2313
 ;**
-;** RCS-ID.......: $Id$
+;** Licence......: This software is freely available for non-commercial 
+;**                use - i.e. for research and experimentation only!
 ;**
-;** Programmer...: F.W. Krom, K2-Electronics
+;** Programmer...: F.W. Krom, PE0FKO
 ;** 
-;** Description..: Meet de L or C waarde zelf calibrerend door bekende C.
+;** Description..: Meet de L & C waarde, zelf calibrerend door bekende C.
 ;**
-;** History......: 
+;** History......: 11/04/2005 V0.1 First complete working version.
+;**                12/04/2005 V0.2 Instellen reference C
+;**                15/04/2005 V0.3 Format 5 digits
+;**                22/12/2006 V0.4 Bugfix prescale & LCD
+;**                02/05/2007 V0.5 Ref-C in EEProm or ROM, Compile switch
+;**                17/02/2008 V0.6 If eeprom 0xFF the write _Cref
 ;**
 ;**************************************************************************/
-
-.include "2313def.inc"
+.nolist
+; There is no code deference between the AT90S2313 and ATtiny2313!
+.include "2313def.inc"		; AT90S2313
+;.include "tn2313def.inc"	; ATtiny2313
 .list
 
-;.equ	xtal	= 4433619
-;.equ	xtal	= 8000000
-.equ	xtal	= 10000000
+;.equ	xtal		= 8000000	; 8MHz
+.equ	xtal		= 10000000	; 10MHz
 
 ; Bekende referentie C
-;.equ	_Cref	= 100		; 100.0pF
-.equ	_Cref	= 1000-46	; 944.0pF
+.equ	_Cref		= 940	; 940pF
+.equ	_UseEEProm	= 1	; Store/Load CRef from EEProm
 
-.equ	prescale = 64		; timer0 prescaler count
-;.equ	prescale = 256		; timer0 prescaler count
+.equ	prescale	= 64	; timer0 prescaler count 64
+;.equ	prescale	= 256	; timer0 prescaler count 256
+
+; N = uS * xtal / (prescale * 256) / 10e6 
+.equ	ticks_40ms	= 40*xtal/prescale/256000
+.equ	ticks_400ms	= 400*xtal/prescale/256000
 
 ; Maximale tijd die we meten voor pulsen.
-; Bij 10MHz en prescaler van 64 (timer0) is dat minimaal 1.22 kHz (0,82ms)
+; Bij 10MHz en prescaler van 64 is dat minimaal 610 Hz (1,6384ms)
+; Bij 10MHz en prescaler van 256 is dat minimaal 152 Hz (6.554ms)
+
 ;.equ	portmax	= 0x7f		; 128 * 64 / 10MHz = 1.22 kHz
 
+;            AT90S2313
+;            +--+-+--+
+;     !RESET |  |_|  | VCC
+;    (RX)PD0 |       | PB7(SCK)
+;    (TX)PD1 |       | PB6(MISO)
+;      XTAL2 |       | PB5(MOSI)
+;      XTAL1 |       | PB4
+;  (INT0)PD2 |       | PB3(OC1)
+;  (INT1)PD3 |       | PB2
+;    (T0)PD4 |       | PB1(AIN1)
+;    (T1)PD5 |       | PB0(AIN0)
+;        GND |       | PD6(ICP)
+;            +-------+
+;
+; PD0	X	Not in use
+; PD1	X	Not in use
+; PD2	O	Relay C/L switch
+; PD3	O	Relay ref C
+; PD4	X	Not in use
+; PD5	I	Frequence input
+; PD6	X	Not in use
+; PB0	I	Switch Calibrate
+; PB1	I	Switch Mode
+; PB2	O	LCD - RS
+; PB3	O	LCD - EN
+; PB4	O	LCD - D4
+; PB5	O	LCD - D5
+; PB6	O	LCD - D6
+; PB7	O	LCD - D7
 
 .macro	IO	; <name> <port> <pin>
 .set	prt_@0		= PORT@1
@@ -39,6 +81,15 @@
 .set	ddr_@0		= DDR@1
 .set	bit_@0		= P@1@2
 .endmacro
+
+IO	freq,D,5		; T1 Freq input 16 bit counter
+IO	relay_refc,D,3		; Relay reference C
+IO	relay_inp,D,2		; Relay L or C
+IO	mode,B,1		; Switch L or C
+IO	calibr,B,0		; Switch calibrate
+IO	lcd,B,4			; LCD Data B4..B7
+IO	rs,B,2			; LCD RS B2
+IO	en,B,3			; LCD EN B3
 
 .macro	IOInp	; <name>
 	cbi	ddr_@0,bit_@0
@@ -57,76 +108,38 @@
 .endmacro
 
 .macro	storeX	; <memory>
-	ldi	ZL,low(@0)
+	ldi	ZL,byte1(@0)
 	rcall	stX
 .endmacro
 
 .macro	storeY	; <memory>
-	ldi	ZL,low(@0)
+	ldi	ZL,byte1(@0)
 	rcall	stY
 .endmacro
 
 .macro	loadX	; <memory>
-	ldi	ZL,low(@0)
+	ldi	ZL,byte1(@0)
 	rcall	ldX
 .endmacro
 
 .macro	loadY	; <memory>
-	ldi	ZL,low(@0)
+	ldi	ZL,byte1(@0)
 	rcall	ldY
 .endmacro
 
+.macro	loadXi	; <value>
+	ldi	RX0,byte1(@0)
+	ldi	RX1,byte2(@0)
+	ldi	RX2,byte3(@0)
+	ldi	RX3,byte4(@0)
+.endmacro
 
-;***** Global 
-;
-;            +--+-+--+
-;     !RESET |  |_|  | VCC
-;    (RX)PD0 |       | PB7(SCK)
-;    (TX)PD1 |       | PB6(MISO)
-;      XTAL2 |       | PB5(MOSI)
-;      XTAL1 |       | PB4
-;  (INT0)PD2 |       | PB3(OC1)
-;  (INT1)PD3 |       | PB2
-;    (T0)PD4 |       | PB1(AIN1)
-;    (T1)PD5 |       | PB0(AIN0)
-;        GND |       | PD6(ICP)
-;            +-------+
-;
-;
-; PD0	RS232 	RX
-; PD1	RS232 	TX
-; PD2	Relay input
-; PD3	Relay ref C
-; PD4	
-; PD5	Frequence input
-; PD6	
-; PD7	Bestaat niet
-;
-; PB0	Switch Calibrate
-; PB1	Switch Mode
-; PB2	LCD		RS
-; PB3	LCD		EN
-; PB4	LCD		D4
-; PB5	LCD		D5
-; PB6	LCD		D6
-; PB7	LCD		D7
-
-IO	freq,D,5		; T1 Freq input 16 bit counter
-IO	relay_refc,D,3		; Relay reference C
-IO	relay_inp,D,2		; Relay L or C
-IO	mode,B,1		; Switch L or C
-IO	calibr,B,0		; Switch calibrate
-
-.EQU	lcd_port	= PORTB
-.EQU	lcd_ddr		= DDRB 
-.EQU	lcd_rs		= PB2
-.EQU	lcd_en		= PB3
 
 ;***** Registers
-.undef	XH	; r27
 .undef	XL	; r26
-.undef	YH	; r29
+.undef	XH	; r27
 .undef	YL	; r28
+.undef	YH	; r29
 
 .def	freqL	= r1
 .def	freqH	= r2
@@ -146,54 +159,57 @@ IO	calibr,B,0		; Switch calibrate
 .def	porttim	= r29
 .def	portval	= r15
 
-.def	RX0	= r16
-.def	RX1	= r17
+.def	RX0	= r24;r16
+.def	RX1	= r25;r17
 .def	RX2	= r18
 .def	RX3	= r19
 .def	RX4	= r20
 .def	RX5	= r21
 .def	RX6	= r22
-.def	RX7	= r23
+.def	RX7	= r14;r23
 
-.def	ticks	= r24		; decrement every timer1 interrupt (8,192ms)
+.def	ticks	= r16;r24	; decrement every timer1 interrupt (8,192ms)
 
-.def	menu	= r25
+.def	menu	= r17;r25
 .def	chr	= r26		; output char
 .def	tmp	= r27		; Scratchregister
+
+.def	status	= r23
 
 .undef	ZH
 .def	zero	= r31		; ZH
 
-.equ	mCap	= 0		; Menu values
-.equ	mInd	= 1
-.equ	mFrqC	= 2
-.equ	mFrqL	= 3
-.equ	mCnst	= 4		; Display constants L & C
-.equ	mEnd	= 5
+.equ	sMenuAll	= 1
+.equ	sRecal		= 2
 
 ;--------------------------------------------------------------------
 ;-- SRAM variablen
 ;--------------------------------------------------------------------
 .dseg
-.equ	buflen	= 12
+.equ	buflen	= 11			; Number buffer length
+.equ	varlen	= 4
 
-Cref:	.byte	4			; C Reference
-N1:	.byte	4			; Count freq F1
-N2:	.byte	4			; Count freq F2
-NQ1:	.byte	4			; Count freq F1^2
-NQ2:	.byte	4			; Count freq F2^2
-ND:	.byte	4			; Count freq F1^2 - F2^2
-C:	.byte	4			; OSC Capaciteit
-L:	.byte	4			; OSC Inductie
-buf:	.byte	buflen			; Buffer number string
-endbuf:	
-KM1:	.byte	4			; -2
-K10:	.byte	4			; 10
-K100:	.byte	4			; 100
-;KTMP:	.byte	4			; 
-KL:	.byte	4			; Constant L calculation
-KFRQ:	.byte	4			; Constant frequence counter
+Cref:	.byte	varlen			; C Reference
+C:	.byte	varlen			; OSC Capaciteit
+L:	.byte	varlen			; OSC Inductie
+N1:	.byte	varlen			; Count freq F1
+N2:	.byte	varlen			; Count freq F2
+NQ1:	.byte	varlen			; Count freq F1^2
+NQ2:	.byte	varlen			; Count freq F2^2
+ND:	.byte	varlen			; Count freq F1^2 - F2^2
+BUFFER:	.byte	buflen			; Buffer number string
+KM1:	.byte	varlen			; -1
+K100:	.byte	varlen			; 100
+KL:	.byte	varlen			; Constant L calculation
+KFRQ:	.byte	varlen			; Constant frequence counter
 
+.if _UseEEProm
+;--------------------------------------------------------------------
+;-- Reference C value at EEPROM
+;--------------------------------------------------------------------
+.eseg
+	.dw	_Cref
+.endif
 ;--------------------------------------------------------------------
 ;-- Interrupt table AT90S2313
 ;--------------------------------------------------------------------
@@ -216,22 +232,34 @@ KFRQ:	.byte	4			; Constant frequence counter
 ;--------------------------------------------------------------------
 
 tHead:	.db	"LC Meter, PE0FKO",0,0
-tCap:	.db	"   Capaciteit   ",0,0
-tIndc:	.db	"   Inductie     ",0,0
-tFreqC:	.db	"  Frequentie C  ",0,0
-tFreqL:	.db	"  Frequentie L  ",0,0
-tConst:	.db	"                ",0,0
-tCali:	.db	" *Calibrating*  ",0,0
-tNoOSC:	.db	" *No osc*       ",0,0
-tpF:	.db	" pF",0
-tnH:	.db	" nH",0
-tHz:	.db	" Hz",0
+tCap:	.db	"   Capacitance  ",0,0
+tIndc:	.db	"   Inductance   ",0,0
+tFreqC:	.db	"   Frequency C  ",0,0
+tFreqL:	.db	"   Frequency L  ",0,0
+tCali:	.db	"--Calibrating-- ",0,0
+tNoOSC:	.db	"--No oscilator--",0,0
+tCref:	.db	"   Reference C  ",0,0
 
-ptrHdr:	.db	tCap,tIndc+0x80,tFreqC,tFreqL+0x80,tConst,0
-ptrFnc:	.dw	fCap,fIndc,fFrqC,fFrqL,fCnst
+tCf:	.db	"m",0xE4,0xE4,0xE4,"nnn","ppp"
+tLf:	.db	" ","mmm",0xE4,0xE4,0xE4,"nnn"
+tFf:	.db	"G","MMM","KKK   "
 
-;ptrFnc:	.dw	ret0,ret0,ret0,ret0,ret0,ret0
-;ret0:	ret
+tCx:	.db	"Cx = ",0
+tLx:	.db	"Lx = ",0
+tC:	.db	" C = ",0
+tL:	.db	" L = ",0
+tF:	.db	" F = ",0
+
+tCe:	.db	"F  ",0
+tLe:	.db	"H  ",0
+tFe:	.db	"Hz ",0
+
+; Menu values
+ptrHdr:	.db	tCap,tIndc+0x80,tFreqC,tFreqL+0x80,tHead,tHead+0x80
+ptrFnc:	.dw	fCap,fIndc,fFrq,fFrq,fCnst,fCnst
+
+.equ	mEndAll	= 6		; End for all the menu's
+.equ	mEnd	= 2		; End for normal menu's
 
 ;--------------------------------------------------------------------
 ;-- Timer0 overflow interupt
@@ -268,13 +296,17 @@ TIMER0:	in	ssreg,SREG
 TIMER1:	in	ssreg,SREG
 
 	tst	portval			; Only the first time
-	brne	ret1			;  portval is zero then.
+	brne	err0			;  portval is zero then.
 
 	neg	porttim			; portval = -porttim
 ;	andi	porttim,portmax
 	mov	portval,porttim
 
 	ldi	porttim,1		; Next timer count
+
+	rjmp	ret1
+
+err0:	sbr	status,1<<sRecal	; Recalibartion needed
 
 ret1:	out	SREG,ssreg
 	reti
@@ -292,9 +324,9 @@ RESET:
 
 	; Port B is output (LCD)
 	ldi	tmp,0b11111100		; PB7..PB2 Output LCD
-	out	lcd_ddr,tmp
-	cbi	lcd_port,lcd_rs		; LCD RS=0
-	cbi	lcd_port,lcd_en		; LCD EN=0
+	out	ddrb,tmp
+	cbi	prt_rs,bit_rs		; LCD RS=0
+	cbi	prt_en,bit_en		; LCD EN=0
 
 	IOInp	freq			; Freq counter input
 	IOClear	freq			; High ohm input
@@ -319,9 +351,8 @@ RESET:
 	; TIMSK: Timer/Counter Interrupt Mask
 	; TOIE1: Timer/Counter1 Overflow Interrupt Enable
 	; OCIE1A: Timer/Counter1 Output Compare Match Interrupt Enable
-	; TICIE1: Timer/Counter1 Input Capture Interrupt Enable
 	; TOIE0: Timer/Counter0 Overflow Interrupt Enable
-	ldi	tmp,(1<<TOIE1)|(0<<OCIE1A)|(0<<TICIE1)|(1<<TOIE0)
+	ldi	tmp,(1<<TOIE1)|(0<<OCIE1A)|(1<<TOIE0)
 	out	TIMSK,tmp
 
 	; MCUCR
@@ -359,137 +390,65 @@ RESET:
 
 	sei				; Enable the interrupts
 
-	; Long delay of 15ms needded for the LCD
-	ldi	ticks,3			; 20ms
-	rcall	dlong
-
 ;	Init LCD interface
+	ldi	ticks,ticks_40ms	; Min 20ms LCD
+	rcall	dlong			;  Delay
 	rcall	lcd_init
 
-;	RS232 Interface
-;	rcall	rs232_init
-
-	clr	zero			; ZH Always zero for store functions
-
 	; Store the constants in SRAM
-	ldi	RX0,-1			; KM1 = -1
-	ldi	RX1,-1
-	ldi	RX2,-1
-	ldi	RX3,-1
+	loadXi	-1			; KM1 = -1
 	storeX	KM1
 
-	; f = N * KFRQ / Portval / 100
 	; KFRQ = Xtal / (prescaler * 256) * 100
-.equ	_KFRQ = xtal*100/(256*prescale)
-	ldi	RX0,byte1(_KFRQ)
-	ldi	RX1,byte2(_KFRQ)
-	ldi	RX2,byte3(_KFRQ)
-	ldi	RX3,byte4(_KFRQ)
+	loadXi	xtal*100/(256*prescale)
 	storeX	KFRQ
 
-
-	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * sqrt(1000)
-.equ	_KL = 8245938		; prescale=64 @10MHz
-;.equ	_KL = 			; prescale=256 @10MHz
-
-;	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * 10^2
-;.equ	_KL = 26075945		; prescale=64 @10MHz
-;.equ	_KL = 104303783		; prescale=256 @10MHz
-
-;	;-- K[48] = 10^9 * 2^7 * prescale / (pi * Xtal) * 10^2 * sqrt(10)
-;.equ	_KL = 82459381		; prescale=64 @10MHz
-;.equ	_KL = 329837524		; prescale=256 @10MHz
-	ldi	RX0,byte1(_KL)		; RX = K
-	ldi	RX1,byte2(_KL)
-	ldi	RX2,byte3(_KL)
-	ldi	RX3,byte4(_KL)
+	; K = 10^9 * 2^7 * prescale / (pi * Xtal) * sqrt(1000)
+	loadXi	1288427829875*prescale/xtal
+;	loadXi	8245938		; prescale=64 @10MHz
 	storeX	KL
 
-	ldi	RX0,byte1(_Cref)	; Cref = _Cref
-	ldi	RX1,byte2(_Cref)
-	clr	RX2
-	clr	RX3
-	storeX	Cref
-
-	ldi	RX0,byte1(10)		; K10 = 10
-	ldi	RX1,byte2(10)
-	clr	RX2
-	clr	RX3
-	storeX	K10
-
-	ldi	RX0,byte1(100)		; K100 = 100
-	ldi	RX1,byte2(100)
-	clr	RX2
-	clr	RX3
+	loadXi	100		; K100 = 100
 	storeX	K100
 
-;--	DEBUG
-.if 0
-.equ	xN1	=	64810
-.equ	xN2	=	47058
-.equ	xN3	=	51061
+	; Get the reference C from EEPROM or ROM
+.if _UseEEProm
+	rcall	eepLd
+;-- V0.6 ---------------
+;	In case the eeprom is not initialized
+	cpi		RX0,0xff	; if eeprom[0..1] == 0xffff
+	brne	eep_ok		; then
+	cpi		RX1,0xff
+	brne	eep_ok
 
-	ldi	RX0,low(xN1)
-	ldi	RX1,high(xN1)
-	clr	RX2
-	clr	RX3
-	storeX	N1
-	rcall	rxquad			; RX = RX^2
-	storeX	NQ1
-
-	ldi	RX0,low(xN2)
-	ldi	RX1,high(xN2)
-	clr	RX2
-	clr	RX3
-	storeX	N2
-
-	ldi	tmp,60
-	mov	portval,tmp
-
-	rcall	debug1
-
-	ldi	RX0,byte1(xN3)
-	ldi	RX1,byte2(xN3)
-	clr	RX2
-	clr	RX3
-
-	rcall	debug2
-	loadX	C			; RX = C
-	rcall	calc2
-	rcall	cvt
-
-	ldi	RX0,byte1(xN3)
-	ldi	RX1,byte2(xN3)
-	clr	RX2
-	clr	RX3
-
-	rcall	debug2
-	loadX	L			; RX = L
-	rcall	calc2
-	rcall	cvt
-
+	loadXi	_CRef		;   Store Cref in eeprom
+	rcall	eepSt
+eep_ok:
+;-- ---- ---------------
+.else
+	loadXi	_CRef
 .endif
-;--	DEBUG
-
-	; Display welkome string
-	rcall	lcd_line0		; Line 0, Char 0
-	ldi	ZL,low(2*thead)		; "LC Meter, PE0FKO"
-	rcall	print_str
-
-	rcall	calibrate		; Do calibrate
+	storeX	Cref
 
 ;--------------------------------------------------------------------
 ;-- Start of the menu selection
 ;--------------------------------------------------------------------
-	ldi	menu,mCap		; Start C menu
+
+	clr	zero			; ZH Always zero for store functions
+	clr	menu			; Start first menu
+	clr	status
 
 	sbis	pin_mode,bit_mode	; Mode key pressed?
-	ori	menu,0x80		;  Special menu's enabled
+	sbr	status,1<<sMenuAll	;  Special menu's enabled
+
+	sbis	pin_calibr,bit_calibr	; Calibrate key pressed?
+	rcall	changeRefC		;  Change reference C
+
+	rcall	calibrate		; Do calibrate
 
 MenuStart:
-	mov	ZL,menu			; Get menu number
-	andi	ZL,0x0f			; Remove the flag(s)
-	subi	ZL,-low(2*ptrHdr)	; Add pointer to header table
+	ldi	ZL,2*ptrHdr		; Get pointer to header table
+	add	ZL,menu			; Add menu number
 	lpm				; Get ptr text and bit7
 	sbrc	r0,7
 	IOClear	relay_inp		; Switch input relay On
@@ -502,24 +461,23 @@ MenuStart:
 	rcall	lcd_line0		; Line 0, Char 0
 	rcall	print_str
 
-wait2:	sbis	pin_mode,bit_mode	; Wait release mode switch
-	rjmp	wait2
+	 sbis	pin_mode,bit_mode	; Wait release mode switch
+	rjmp	PC-1
 
 MenuMain:
 	mov	ZL,menu			; Menu * 2 and remove special flags
-	andi	ZL,0x0f
 	lsl	ZL
-	subi	ZL,-low(2*ptrFnc)	; Pointer to menu function table
+	subi	ZL,-(2*ptrFnc)		; Pointer to menu function table
 	rcall	MenuFunc		; Call the menu in Z
 
-	ldi	ticks,80
+	ldi	ticks,ticks_400ms
 wait:	sleep
 
 	sbis	pin_calibr,bit_calibr	; Calibrate key
-	rjmp	DoCalibrate		;  then calibrate
+	 rjmp	DoCalibrate		;  then calibrate
 
 	sbis	pin_mode,bit_mode	; Mode key
-	rjmp	MenuNext		;  then next menu
+	 rjmp	MenuNext		;  then next menu
 
 	tst	ticks
 	brpl	wait
@@ -528,35 +486,30 @@ wait:	sleep
 
 DoCalibrate:
 	rcall	calibrate		; Do calibrate
-wait0:	sbis	pin_calibr,bit_calibr	; Wait release calibrate switch
-	rjmp	wait0
-	rjmp	MenuMain
+	 sbis	pin_calibr,bit_calibr	; Wait release calibrate switch
+	rjmp	PC-1
+	rjmp	MenuStart
 
 ;-- Start tail code
 MenuNext:
-	mov	ZL,menu			; Get menu number
-	andi	ZL,0x0f			; Remove the flag(s)
-	subi	ZL,-low(2*ptrHdr)	; Add pointer to header table
+	ldi	ZL,2*ptrHdr		; Get pointer to header table
+	add	ZL,menu			; Add menu number
 	lpm				; Get ptr text and bit7
 	sbrc	r0,7
 	IOSet	relay_inp		; Switch input relay Off
 
 ;-- Increment the menu
-;	sbrc	menu,7
-;	jmp	highMenu
-	andi	menu,0x0f		; TIJDELIJK
+	ldi	tmp,mEnd
+	sbrc	status,sMenuAll
+	ldi	tmp,mEndAll
 
 	inc	menu
-	cpi	menu,mEnd
-	brlt	mi
-	clr	menu
-mi:	rjmp	MenuStart
+	cp	menu,tmp
+	brne	PC+2
+	 clr	menu
+	rjmp	MenuStart
 
-;highMenu:
-
-
-
-MenuFunc:				; Jump via the return stack
+MenuFunc:				; Jump to *Z via the return stack
 	lpm				; to the func pointed by Z
 	push	r0
 	subi	ZL,-1			; ZL++
@@ -571,8 +524,13 @@ fCap:	rcall	calc1
 	brcs	ret6			; OSC not running
 	loadX	C			; RX = C
 	rcall	calc2
-	ldi	ZL,low(2*tpF)
-	rjmp	print1
+
+	rcall	lcd_line1		; Line 1
+	ldi	ZL,2*tCx
+	rcall	print_str
+	ldi	ZL,2*tCf
+	ldi	chr,2*tCe
+	rjmp	print_nr
 
 ;--------------------------------------------------------------------
 ;-- Calculate the unknow Lx
@@ -581,74 +539,127 @@ fIndc:	rcall	calc1
 	brcs	ret6			; OSC not running
 	loadX	L			; RX = L
 	rcall	calc2
-	ldi	ZL,low(2*tnH)
-	rjmp	print1
+
+	rcall	lcd_line1		; Line 1
+	ldi	ZL,2*tLx
+	rcall	print_str
+	ldi	ZL,2*tLf
+	ldi	chr,2*tLe
+	rjmp	print_nr
 
 ;--------------------------------------------------------------------
-;-- Calculate Frequence C
+;-- Calculate Frequence
+;-- F = N * KFRQ / Portval / 100
+;-- KFRQ = Xtal / (prescaler * 256) * 100
 ;--------------------------------------------------------------------
-fFrqC:	rcall	sample			; Get a freq sample
+fFrq:	rcall	sample			; Get a freq sample
 	brcs	ret6			; OSC not running
-
-	loadY	KFRQ			; 15.2588*100*10	10e6/2^16 (10MHz)
+	loadY	KFRQ			; RY = KFRQ
 	rcall	mul32			; RX *= RY
-
 	rcall	ldYportval		; RY = portval
-	rcall	div48			; RX = RX / RY
+	rcall	div48			; RX /= RY
+	loadY	K100			; RY = 100
+	rcall	div48			; RX /= RY
 
-	loadY	K100
-	rcall	div48			; RX = RX / RY
-
-	ldi	ZL,low(2*tHz)
-	rjmp	print1
-
-;--------------------------------------------------------------------
-;-- Calculate Frequence L
-;--------------------------------------------------------------------
-fFrqL:	rcall	sample			; Get a freq sample
-	brcs	ret6			; OSC not running
-
-	loadY	KFRQ			; 152,587890625 * 100 * 10	10e6/2^16 (10MHz)
-	rcall	mul32			; RX *= RY
-
-	rcall	ldYportval		; RY = portval
-	rcall	div48			; RX = RX / RY
-
-	loadY	K100
-	rcall	div48			; RX = RX / RY
-
-	ldi	ZL,low(2*tHz)
-	rjmp	print1
+	rcall	lcd_line1		; Line 1
+	ldi	ZL,2*tF
+	rcall	print_str
+	ldi	ZL,2*tFf
+	ldi	chr,2*tFe
+	rjmp	print_nr
 
 ;--------------------------------------------------------------------
 ;-- Display constants
 ;--------------------------------------------------------------------
 fCnst:	loadX	L
-	ldi	ZL,low(2*tnH)
-	rcall	print1
+	rcall	lcd_line0		; Line 0
+	ldi	ZL,2*tL
+	rcall	print_str
+	ldi	ZL,2*tLf
+	ldi	chr,2*tLe
+	rcall	print_nr
 
 	loadX	C
-	ldi	ZL,low(2*tpF)
-	rjmp	print0
+	rcall	lcd_line1		; Line 1
+	ldi	ZL,2*tC
+	rcall	print_str
+	ldi	ZL,2*tCf
+	ldi	chr,2*tCe
+	rjmp	print_nr
+
+
+;--------------------------------------------------------------------
+;-- Change reference C in eeprom
+;-- Init: boot with mode + cali key pressed
+;-- mode key is -1 pF, cali key is +1pF
+;-- Reboot for exit!
+;--------------------------------------------------------------------
+changeRefC:
+	sbrs	status,sMenuAll		; Beide knoppen ingedrukt!
+	ret
+
+	rcall	lcd_line0		; Print de header
+	ldi	ZL,2*tCref
+	rcall	print_str
+
+crcprt:	loadX	Cref			; Print Cref 
+	rcall	lcd_line1
+	ldi	ZL,2*tC
+	rcall	print_str
+	ldi	ZL,2*tCf
+	ldi	chr,2*tCe
+	rcall	print_nr
+
+	; Wacht key release
+	 sbis	pin_calibr,bit_calibr	; Calibrate key
+	rjmp	PC-1
+	 sbis	pin_mode,bit_mode	; Mode key
+	rjmp	PC-3
+
+	ldi	tmp,0			; Debounce key's
+	 dec	tmp
+	brne	PC-1
+
+	loadX	Cref
+crc1:	sbis	pin_calibr,bit_calibr	; Calibrate key
+	rjmp	crcinc
+	sbis	pin_mode,bit_mode	; Mode key
+	rjmp	crcdec
+	rjmp	crc1
+
+.if _UseEEProm
+crcinc:	adiw	RX0,1			; RX0:RX1 += 1
+	rjmp	crc2
+
+crcdec:	sbiw	RX0,1			; RX0:RX1 -= 1
+crc2:	storeX	Cref			; Cref = RX
+	rcall	eepSt
+.else
+crcinc:
+crcdec:
+.endif
+	rjmp	crcprt
 
 ;--------------------------------------------------------------------
 ;-- Calibrate the timer
 ;--------------------------------------------------------------------
 calibrate:
-	rcall	lcd_line1		; Line 1, Char 0
-	ldi	ZL,low(2*tcali)		; Print header
+	rcall	lcd_line0		; Line 0, Char 0
+	ldi	ZL,2*tHead		; "LC Meter, PE0FKO"
 	rcall	print_str
 
-	ldi	ticks,16		; 100ms for stable OSC
-	rcall	dlong
+	rcall	lcd_line1		; Line 1, Char 0
+	ldi	ZL,2*tCali		; Print header
+	rcall	print_str
 
+	ldi	ticks,ticks_400ms	; 400ms for stable OSC
+	rcall	dlong
 	cli				; Disable interrupt
 
 	; Init the timer registers to default zero
-	clr	tmp
-	out	TCNT1H,tmp		; Clear the freq counter
-	out	TCNT1L,tmp
-	out	TCNT0,tmp		; Timer0 init
+	out	TCNT1H,zero		; Clear the freq counter
+	out	TCNT1L,zero
+	out	TCNT0,zero		; Timer0 init
 
 	clr	porttim			; Start counting the porttim
 	clr	portval
@@ -671,18 +682,17 @@ calibrate:
 
 	IOClear	relay_refc		; Switch Cref On
 	rcall	sample			; Delay only, stable osc
-
 	rcall	calc1			; Get N2 and calc
-
 	IOSet	relay_refc		; Switch Cref Off
 
 	brcs	calibrate		; OSC not running?
 
-	;--------------------------------------------------------------------
+	cbr	status,1<<sRecal	; Recalibartion done
+
+	;------------------------------------------------------------
 	;-- Calculate the unknow C
 	;-- C[32] = Cref * N2^2 / (N1^2 - N2^2)
-	;--------------------------------------------------------------------
-debug1:
+	;------------------------------------------------------------
 	loadX	Cref			; RX = Cref
 	loadY	NQ2			; RY = N2^2
 	rcall	mul32			; RX = RX * RY
@@ -690,13 +700,11 @@ debug1:
 	rcall	div48			; RX = RX / RY
 	storeX	C			; C = RX
 
-	;--------------------------------------------------------------------
+	;------------------------------------------------------------
 	;-- Calculate the unknow L
 	;-- L[32] = ( K * portval / N1 )^2 / C
-	;-- K[48] = 10^9 * 2^8 * prescaler / (2 * pi * Xtal) * 100 * sqrt(10)
-	;-- *100 (10^2) is nodig omdat we de C & L een factor 10 te groot is! ( x,0nH )
-	;--------------------------------------------------------------------
-
+	;-- K[32] = 10^9 * 2^7 * prescaler / (pi * Xtal) * sqrt(1000)
+	;------------------------------------------------------------
 	loadX	KL			; RX = K
 	rcall	ldYportval		; RY = portval
 	rcall	mul32			; RX *= RY
@@ -707,97 +715,32 @@ debug1:
 	rcall	div48			; RX = RX / RY
 	storeX	L			; L = RX
 
-.if 0
-	loadX	N1
-	ldi	chr,'N'
-	rcall	rs232_putch
-	ldi	chr,'1'
-	rcall	rs232_putch
-	ldi	chr,'='
-	rcall	rs232_putch
-	rcall	rs232_print
-
-	loadX	N2
-	ldi	chr,'N'
-	rcall	rs232_putch
-	ldi	chr,'2'
-	rcall	rs232_putch
-	ldi	chr,'='
-	rcall	rs232_putch
-	rcall	rs232_print
-
-	mov	RX0,portval
-	clr	RX1
-	clr	RX2
-	clr	RX3
-	ldi	chr,'P'
-	rcall	rs232_putch
-	ldi	chr,'V'
-	rcall	rs232_putch
-	ldi	chr,'='
-	rcall	rs232_putch
-	rcall	rs232_print
-
-	loadX	C
-	ldi	chr,'C'
-	rcall	rs232_putch
-	ldi	chr,'='
-	rcall	rs232_putch
-	rcall	rs232_print
-
-	loadX	L
-	ldi	chr,'L'
-	rcall	rs232_putch
-	ldi	chr,'='
-	rcall	rs232_putch
-	rcall	rs232_print
 	ret
-
-rs232_print:
-	rcall	cvt
-	ldi	ZL,low(buf)
-nxt1:	ld	chr,Z+
-	tst	chr
-	breq	endstr1
-	rcall	rs232_putch
-	rjmp	nxt1
-endstr1:
-	rcall	rs232_crlf
-	ret
-
-.else
-	ret
-.endif
 
 ;--------------------------------------------------------------------
 ;-- Sample
 ;--------------------------------------------------------------------
-
-sam0:	sleep				; Wait for a interrupt (timer)
-sample:	brtc	sam0			; Is there a sample?
+	sleep				; Wait for a interrupt (timer)
+sample:	brtc	PC-1			; Is there a sample?
 	mov	RX0,freqL		; RX = freq count
 	mov	RX1,freqH
 	clt				; T=0, take next freq sample
-
 	mov	r0,RX0			; Test zero value
 	or	r0,RX1
 	breq	err1			; if not zero there is a sample!
 	clr	RX2
 	clr	RX3
 	storeX	N2			; N2 = sample
-
 	clc				; No error
 	ret
 
 err1:	; Freq count is zero then error message
 	rcall	lcd_line1		; Line 1, Char 0
-	ldi	ZL,low(2*tNoOSC)
+	ldi	ZL,2*tNoOSC
 	rcall	print_str
-
 	clt				; Next sample now
 	sec				; Error
 	ret
-
 
 ;--------------------------------------------------------------------
 ;-- Calculate the unknow Cx
@@ -806,7 +749,6 @@ err1:	; Freq count is zero then error message
 ;-- Calculate the unknow Lx
 ;-- Lx[32] = L * (NQ1^2 - NQ2^2) / NQ2^2
 ;--------------------------------------------------------------------
-
 calc1:	rcall	sample			; Get N2
 	brcs	ret5			; OSC not running
 debug2:
@@ -819,13 +761,9 @@ nxt5:	storeX	NQ2			; NQ2 = N2^2
 
 	storeY	ND			; ND = N1^2 - N2^2
 	clc				; No error
-
 ret5:	ret
 
-negy:
-;	rcall	rs232_text
-;	.db	"F1 Correction!",10,13,0,0
-	loadY	N1
+negy:	loadY	N1
 	loadX	N2
 	rcall	sub32			; RY = N1 - N2
 
@@ -859,7 +797,6 @@ calc2:	loadY	ND			; RY = NQ1^2 - NQ2^2
 	rcall	div48			; RX = RX / RY
 	ret
 
-
 ;--------------------------------------------------------------------
 ;-- RX[64] = RX[32]^2
 ;--------------------------------------------------------------------
@@ -876,46 +813,38 @@ mul32:	clr	RX7
 	clr	RX5
 	sub	RX4,RX4		; RX4=0, C=0
 	ldi	tmp,32+1
-
 mnxtb:	brcc	mnoadd
 	add	RX4,RY0
 	adc	RX5,RY1
 	adc	RX6,RY2
 	adc	RX7,RY3
-mnoadd:
-	ror	RX7
+mnoadd:	ror	RX7
 	ror	RX6
 	ror	RX5
 	ror	RX4
-
 	ror	RX3
 	ror	RX2
 	ror	RX1
 	ror	RX0
-
 	dec	tmp
 	brne	mnxtb
 	ret
-
 
 ;--------------------------------------------------------------------
 ;-- RX[48] = RX[48] / RY[32]
 ;--------------------------------------------------------------------
 div48:	ldi	tmp,48+1		; init loop counter
-
 	clr	RR0			; clear remainder Low byte
 	clr	RR1
 	clr	RR2
 	clr	RR3
 	sub	RR4,RR4			; clear remainder High byte and carry
-
 div1:	rol	RX0
 	rol	RX1
 	rol	RX2
 	rol	RX3
 	rol	RX4
 	rol	RX5
-
 	dec	tmp
 	brne	div3
 	ret
@@ -925,13 +854,11 @@ div3:	rol	RR0
 	rol	RR2
 	rol	RR3
 	rol	RR4
-
 	sub	RR0,RY0			;remainder = remainder - divisor
 	sbc	RR1,RY1
 	sbc	RR2,RY2
 	sbc	RR3,RY3
 	sbc	RR4,zero
-
 	brcc	div2			;if result negative
 	add	RR0,RY0			;   restore remainder
 	adc	RR1,RY1
@@ -942,7 +869,6 @@ div3:	rol	RR0
 	rjmp	div1			;else
 div2:	sec				;   set carry to be shifted into result
 	rjmp	div1
-
 
 ;--------------------------------------------------------------------
 ;-- RY[32] = RY[32] - RX[32]
@@ -987,46 +913,46 @@ ldYportval:
 	clr	RY3
 	ret
 
+.if _UseEEProm
+;--------------------------------------------------------------------
+;-- Eeprom Store / Load reference C
+;--------------------------------------------------------------------
+eepSt:
+	ldi	tmp,0
+	out	EEAR,tmp
+	out	EEDR,RX0
+	rcall	eep0
+	inc	tmp
+	out	EEAR,tmp
+	out	EEDR,RX1
+eep0:
+	sbi	EECR,EEMWE
+	sbi	EECR,EEWE
+	 sbic	EECR,EEWE
+	rjmp	PC-1
+	ret
+
+eepLd:	; RX = EEPROM[16]
+	ldi	tmp,0
+	out	EEAR,tmp
+	sbi	EECR,EERE
+	in	RX0,EEDR
+	inc	tmp
+	out	EEAR,tmp
+	sbi	EECR,EERE
+	in	RX1,EEDR
+	clr	RX2
+	clr	RX3
+	ret
+.endif
+
 ;--------------------------------------------------------------------
 ;-- Convert 32bits RX to decimal string
-;-- 12 char buffer (9 digits, 2 punt, null)
-;;;-- 14 char buffer (10 digits, 3 punt, null)
+;-- 10 char buffer + null
 ;--------------------------------------------------------------------
-cvt:	ldi	ZL,low(endbuf)
+cvt:	ldi	ZL,BUFFER+buflen
 	ldi	chr,0
-	st	-Z,chr
-;	rcall	digit
-;	ldi	chr,','
-;	st	-Z,chr
-	rcall	digit
-	rcall	digit
-	rcall	digit
-	ldi	chr,'.'
-	st	-Z,chr
-	rcall	digit
-	rcall	digit
-	rcall	digit
-	ldi	chr,'.'
-	st	-Z,chr
-	rcall	digit
-	rcall	digit
-	rcall	digit
-
-nxt2:	ld	chr,Z
-	cpi	chr,'0'
-	breq	cvt1
-	cpi	chr,'.'
-	brne	ends
-cvt1:	ldi	chr,' '
-	st	Z+,chr
-	rjmp	nxt2
-
-ends:	cpi	chr,0
-	brne	ret2
-	ldi	chr,'0'
-	st	-Z,chr
-ret2:	ret
-
+	st	-Z,chr		; NULL  0 EOS
 
 digit:	sub	chr,chr		; clear remainder and carry
 	ldi	tmp,32+1	; init loop counter
@@ -1045,24 +971,95 @@ digit1:	rol	RX0
 digit2:	sec			;   set carry to be shifted into result
 	rjmp	digit1
 digit3:	subi	chr,-'0'
+
 	st	-Z,chr
+	cpi	ZL,BUFFER
+	brne	digit
+
 	ret
 
 ;--------------------------------------------------------------------
-;-- Print line 0 & 1
+;-- Print RX and text on line 0 or 1
+;-- ZL = rom text
+;-- chr type ('F','H')
 ;--------------------------------------------------------------------
+print_nr:
+	push	chr
+	push	ZL
 
-print1:	push	ZL			; Save for later print_str
-	rcall	lcd_line1		; Line 1
-p0:	rcall	cvt			; RX to string
-	ldi	ZL,low(buf)
-nxt:	ld	chr,Z+
-	tst	chr
-	breq	endstr
+	rcall	cvt
+
+	ldi	ZL,BUFFER
+nxt2:	ld	chr,Z+			; Skip leading '0'
+	cpi	chr,'0'
+	breq	nxt2
+
+	cpi	chr,0			; EOS?
+	brne	PC+2
+	 dec	ZL			; Reset pointer to last char+1
+
+	push	ZL			; Save string start+1
+
+	subi	ZL,-(5-1)		; New end of string
+	cpi	ZL,BUFFER+buflen	; Check for array size
+	brmi	PC+2
+	 ldi	ZL,BUFFER+buflen-1	; Litmit to array size
+
+	clr	chr			; Set end of string
+	st	Z,chr
+	subi	ZL,5			; ZL is begin of string
+
+l8:	ld	chr,Z+			; Output space for leading '0'
+	cpi	chr,'0'
+	brne	l11
+	ldi	chr,' '
 	rcall	putch
-	rjmp	nxt
-endstr:
+	rjmp	l8
+
+l11:	cpi	ZL,BUFFER+buflen-3	; < 1000 extra space for missing comma
+	brmi	l12
+	 push	chr
+	 cpi	chr,0
+	 breq	PC+3
+	  ldi	chr,' '
+	 rjmp	PC+2
+	  ldi	chr,'0'
+	 rcall	putch
+	 pop	chr
+
+l12:	cpi	chr,0			; Output digits left comma
+	breq	ends
+	rcall	putch
+	ld	chr,Z+
+	cpi	ZL,BUFFER+buflen-(3*3)
+	breq	l14
+	cpi	ZL,BUFFER+buflen-(2*3)
+	breq	l14
+	cpi	ZL,BUFFER+buflen-(1*3)
+	brne	l12
+
+l14:	dec	ZL			; Output comma
+	ldi	chr,','
+
+L15:	rcall	putch			; Output digits rigth comma
+	ld	chr,Z+
+	cpi	chr,0
+	brne	L15
+
+ends:	ldi	chr,' '
+	rcall	putch
+
+	pop	ZL			; 
+	subi	ZL,BUFFER+1
+	pop	tmp
+	add	ZL,tmp
+
+	lpm
+	mov	chr,r0
+	rcall	putch
+
 	pop	ZL
+
 print_str:
 	lpm
 	adiw	ZL,1
@@ -1073,46 +1070,63 @@ print_str:
 	rjmp	print_str
 ret3:	ret
 
-print0:	push	ZL			; Save for later print_str
-	rcall	lcd_line0		; Line 0
-	rjmp	p0
+; N = uS * xtal / (prescale * 256) / 10e6 
+dlong:	; Delay long in steps of ticks
+	sleep
+	tst	ticks
+	brne	dlong
+	ret
 
 ;--------------------------------------------------------------------
 ;-- LCD Functions
 ;--------------------------------------------------------------------
 
 lcd_init:
-	cbi	lcd_port,lcd_rs
+	cbi	prt_rs,bit_rs
 
-	ldi	chr,$30			;set DB4&DB5="H"
-	rcall	wr_lcd_1		;1) reset sequence 1
-	ldi	chr,200			;5mS
-	rcall	dX25uS			;(4.1mS minimum)
+	ldi	chr,$30			;
+	rcall	wr_lcd8			;1) Function Set (8-Bit Interface)
 
-	ldi	chr,$30			;set DB4&DB5="H"
-	rcall	wr_lcd8			;2) reset sequence 2 (100uS minimum in LCD spec)
+	ldi	chr,200			;5mS Delay
+	rcall	dX25uS
 
-	ldi	chr,$30			;set DB4&DB5="H"
-	rcall	wr_lcd8			;3) reset sequence 3
+	ldi	chr,$30			;
+	rcall	wr_lcd8			;2) Function Set (8-Bit Interface)
 
-	ldi	chr,$20			;$20
-	rcall	wr_lcd8			;4) set data mode = 4bit transfer
+	ldi	chr,$30			;
+	rcall	wr_lcd8			;3) Function Set (8-Bit Interface)
 
-	ldi	chr,0b00101000		;$28
-	rcall	wr_ins			;5) set charactor mode = 7 dots
+	ldi	chr,$20			;
+	rcall	wr_lcd8			;4) Function Set (4-Bit Interface)
 
-	ldi	chr,0b00000110
-	rcall	wr_ins			;6) set entry mode
+	; 4 Bit mode active!
 
-	ldi	chr,0b00001100
+	ldi	chr,0b00101000		;$28 [0 0 1 DL.N F x x]
+	rcall	wr_ins			;5) Interface data length 4 bits (DL), 2 line (N), Font 5*8 (F)
+
+	ldi	chr,0b00001000		;$08 [0 0 0 0 1 D C B]
+	rcall	wr_ins			;6) Display, Cursor, Blinking OFF
+
+	ldi	chr,0b00000001		;$01 [0 0 0 0.0 0 0 1]
+	rcall	wr_ins			;6) Display clear
+
+	ldi	chr,2000/25		;2mS delay
+	rcall	dX25uS
+
+	ldi	chr,0b00000110		;$06 [0 0 0 0 0 1 I/D SH]
+	rcall	wr_ins			;6) Entry mode
+
+	ldi	chr,0b00001100		;$0C [0 0 0 0.1 D C B]
 	rcall	wr_ins			;7) Display ON, cursor OFF, blink OFF
+
+	ret
 
 lcd_clear:
 	ldi	chr,$01			;clear display
 	rcall	wr_ins
-	ldi	chr,1750/25		;1,75mS (Spec 1,64mS)
+	ldi	chr,2000/25		;2mS (Spec 1,64mS)
 	rcall	dX25uS
-ret4:	ret
+	ret
 
 lcd_line0:
 	ldi	chr,$80+0x00		; Line 0
@@ -1122,58 +1136,55 @@ lcd_line1:
 	ldi	chr,$80+0x40		; Line 1
 	rjmp	wr_ins
 
-wr_lcd8:				; Write comment in 8 bits mode
-	rcall	wr_lcd_1
+; space()
+; register: chr, tmp
+space:	ldi	chr,' '
+
+; putch( chr=Char )
+; register: chr, tmp
+putch:	sbi	prt_rs,bit_rs
+	rcall	wr_lcd
+	ldi	chr,50/25		; 50uS
+	rjmp	dX25uS			; Delay 32uS
+
+wr_lcd8:rcall	wr_lcd_1		; Write code in 8 bits mode
 	ldi	chr,200/25		; 200uS
 	rjmp	dX25uS			; Delay 32uS
 
-putch:	sbi	lcd_port,lcd_rs
-	rcall	wr_lcd
-	ldi	tmp,50/25		; 50uS
-	rjmp	dX25uS			; Delay 32uS
-
+; wr_lcd( chr=Code )
+; local: tmp
 wr_lcd:	push	chr
 	rcall	wr_lcd_1
 	pop	chr
 	swap	chr
 wr_lcd_1:
+	push	tmp
+	sbi	prt_en,bit_en		; Enable strobe up
 	andi	chr,0xF0
-	in	tmp,lcd_port
+	in	tmp,prt_lcd
 	andi	tmp,0x0F
 	or	chr,tmp
-	out	lcd_port,chr
-	nop
-	sbi	lcd_port,lcd_en
-	nop
-	cbi	lcd_port,lcd_en
+	out	prt_lcd,chr
+	cbi	prt_en,bit_en		; Enable strobe down
+	pop	tmp
+	ret
+
+wr_ins:	cbi	prt_rs,bit_rs
+	rcall	wr_lcd
+	ldi	chr,100/25		; 100uS
+
+;Xm Sec delay, X=chr
+dX25uS:	push	tmp
+	ldi	tmp,25*xtal/10000000	; 25us (10 cycles)
+	rcall	duS			;+7
+	dec	tmp			;+1
+	brne	pc-2			;+2
+	dec	chr
+	brne	pc-5
+	pop	tmp
 duS:					; Delay small 7 cylces, at 8Mhz clock
 					;+3 cycles being "rcall"ed
-	ret				;+4 cycles to return. 10 cycles total
-
-wr_ins:	cbi	lcd_port,lcd_rs
-	rcall	wr_lcd
-	ldi	chr,4			; 100uS
-
-dX25uS:	;Xm Sec delay, X=chr
-	ldi	tmp,25			; 10MHz
-;	ldi	tmp,11			; 4.433619Mhz
-d25uS1:	rcall	duS			;+7
-	dec	tmp			;+1
-	brne	d25uS1			;+2
-	dec	chr
-	brne	dX25uS
+					;+4 cycles to return. 10 cycles total
 	ret
 
-; N = uS * xtal / (256 * 256) / 10e6 
-; 6,5536ms @ 10Mhz
-; 8,192ms @ 8Mhz
-; 14.78160ms @ 4.433619Mhz
-dlong:	; Delay long in steps of ticks * 6,5536ms
-	sleep
-	tst	ticks
-	brne	dlong
-	ret
-
-;.include "rs232.inc"
-
-	
+; EOF
