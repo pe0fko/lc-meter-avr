@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.1.42  C:\SVN\lc-meter-avr\LC.asm Sun Jan 08 18:00:19 2012
+AVRASM ver. 2.1.42  C:\SVN\lc-meter-avr\LC.asm Mon Jan 09 11:24:51 2012
 
 
 EQU  SIGNATURE_000 0000001e
@@ -446,6 +446,7 @@ EQU  INT_VECTORS_SIZE 00000013
 EQU  xtal         00989680
 EQU  _Cref        000003ac
 EQU  _UseEEProm   00000001
+EQU  _IdxEEProm   0000000a
 EQU  prescale     00000040
 EQU  ticks_40ms   00000018
 EQU  ticks_400ms  000000f4
