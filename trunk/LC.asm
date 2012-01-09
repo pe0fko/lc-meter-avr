@@ -17,6 +17,7 @@
 ;**                22/12/2006 V0.4 Bugfix prescale & LCD
 ;**                02/05/2007 V0.5 Ref-C in EEProm or ROM, Compile switch
 ;**                17/02/2008 V0.6 If eeprom 0xFF the write _Cref
+;**                12/01/2012 V0.7 _Cref in eeprom on deferent possition.
 ;**
 ;**************************************************************************/
 .nolist
@@ -31,6 +32,7 @@
 ; Bekende referentie C
 .equ	_Cref		= 940	; 940pF
 .equ	_UseEEProm	= 1	; Store/Load CRef from EEProm
+.equ	_IdxEEProm	= 10	; Index in eeprom start.
 
 .equ	prescale	= 64	; timer0 prescaler count 64
 ;.equ	prescale	= 256	; timer0 prescaler count 256
@@ -42,7 +44,6 @@
 ; Maximale tijd die we meten voor pulsen.
 ; Bij 10MHz en prescaler van 64 is dat minimaal 610 Hz (1,6384ms)
 ; Bij 10MHz en prescaler van 256 is dat minimaal 152 Hz (6.554ms)
-
 ;.equ	portmax	= 0x7f		; 128 * 64 / 10MHz = 1.22 kHz
 
 ;            AT90S2313
@@ -208,6 +209,7 @@ KFRQ:	.byte	varlen			; Constant frequence counter
 ;-- Reference C value at EEPROM
 ;--------------------------------------------------------------------
 .eseg
+	.org	_IdxEEProm
 	.dw	_Cref
 .endif
 ;--------------------------------------------------------------------
@@ -416,7 +418,7 @@ RESET:
 	rcall	eepLd
 ;-- V0.6 ---------------
 ;	In case the eeprom is not initialized
-	cpi		RX0,0xff	; if eeprom[0..1] == 0xffff
+	cpi		RX0,0xff ; if eeprom[0..1] == 0xffff
 	brne	eep_ok		; then
 	cpi		RX1,0xff
 	brne	eep_ok
@@ -918,7 +920,7 @@ ldYportval:
 ;-- Eeprom Store / Load reference C
 ;--------------------------------------------------------------------
 eepSt:
-	ldi	tmp,0
+	ldi	tmp,_IdxEEProm
 	out	EEAR,tmp
 	out	EEDR,RX0
 	rcall	eep0
@@ -933,7 +935,7 @@ eep0:
 	ret
 
 eepLd:	; RX = EEPROM[16]
-	ldi	tmp,0
+	ldi	tmp,_IdxEEProm
 	out	EEAR,tmp
 	sbi	EECR,EERE
 	in	RX0,EEDR
